@@ -31,3 +31,5 @@ bin/
 # Editor/IDE
 .idea/
 .vscode/
+
+PLAN.md
