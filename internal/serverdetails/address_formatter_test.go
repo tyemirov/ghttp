@@ -3,7 +3,7 @@ package serverdetails_test
 import (
 	"testing"
 
-	"github.com/temirov/ghttp/internal/serverdetails"
+	"github.com/tyemirov/ghttp/internal/serverdetails"
 )
 
 const (
