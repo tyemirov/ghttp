@@ -10,7 +10,7 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/temirov/ghttp/internal/markdown"
+	"github.com/tyemirov/ghttp/internal/markdown"
 )
 
 type markdownHandler struct {

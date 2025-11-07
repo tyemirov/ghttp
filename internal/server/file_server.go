@@ -13,8 +13,8 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/temirov/ghttp/internal/serverdetails"
-	"github.com/temirov/ghttp/pkg/logging"
+	"github.com/tyemirov/ghttp/internal/serverdetails"
+	"github.com/tyemirov/ghttp/pkg/logging"
 )
 
 const (
