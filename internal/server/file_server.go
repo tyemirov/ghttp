@@ -189,6 +189,11 @@ func (fileServer FileServer) buildFileHandler(configuration FileServerConfigurat
 	return handler
 }
 
+// Handler exposes the HTTP handler used to serve files for the provided configuration.
+func (fileServer FileServer) Handler(configuration FileServerConfiguration) http.Handler {
+	return fileServer.buildFileHandler(configuration)
+}
+
 func (fileServer FileServer) wrapWithHeaders(handler http.Handler, protocolVersion string) http.Handler {
 	return http.HandlerFunc(func(responseWriter http.ResponseWriter, request *http.Request) {
 		responseWriter.Header().Set(serverHeaderName, serverHeaderValue)
