@@ -1,5 +1,37 @@
 # Changelog
 
+## v0.2.4 — 2025-10-10
+
+### Features ✨
+- Add integration test for static asset MIME types
+- Add multi-platform Docker image build support
+- Add comprehensive documentation for Docker workflows
+
+### Improvements ⚙️
+- Consolidate Docker publishing workflow
+- Publish multi-platform Docker images
+- Streamline Docker distribution targets
+- Hardcode Docker base images for stability
+- Update instructions for autonomous coding flow
+- Update README and documentation for autonomous flow
+
+### Bug Fixes 🐛
+- Stabilize Docker integration tests
+- Correct branch reference in Docker workflows
+- Skip Docker integration tests when Docker is missing
+- Ignore service files in distribution
+
+### Testing 🧪
+- Add extensive integration tests for Docker and distribution
+- Use temporary directories and table-driven tests for integration
+- Mock external dependencies and focus on black-box API testing
+
+### Docs 📚
+- Update README.md with usage and project info
+- Add comprehensive Docker publishing and CI documentation
+- Expand AGENTS.md with coding standards and policies
+- Improve autonomous flow documentation
+
 ## v0.2.3 — 2025-10-10
 
 ### Fixed
