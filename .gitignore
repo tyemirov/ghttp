@@ -33,3 +33,5 @@ bin/
 .vscode/
 
 PLAN.md
+# Managed by gix gitignore workflow
+tools/
