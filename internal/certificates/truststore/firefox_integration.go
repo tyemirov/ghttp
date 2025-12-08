@@ -11,7 +11,7 @@ import (
 	"runtime"
 	"strings"
 
-	"github.com/temirov/ghttp/internal/certificates"
+	"github.com/tyemirov/ghttp/internal/certificates"
 )
 
 const (
