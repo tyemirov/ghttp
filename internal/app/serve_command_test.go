@@ -10,7 +10,7 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 
-	"github.com/temirov/ghttp/pkg/logging"
+	"github.com/tyemirov/ghttp/pkg/logging"
 )
 
 func TestPrepareServeConfigurationRejectsHTTPSWithTLSFiles(t *testing.T) {
