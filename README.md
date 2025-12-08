@@ -1,6 +1,6 @@
 # gHTTP
 
-[![GitHub release](https://img.shields.io/github/release/temirov/ghttp.svg)](https://github.com/temirov/ghttp/releases)
+[![GitHub release](https://img.shields.io/github/release/tyemirov/ghttp.svg)](https://github.com/tyemirov/ghttp/releases)
 
 gHTTP is a Go-powered file server that mirrors the ergonomics of `python -m http.server`, adds structured zap-based request logging, renders mardown files as HTML, and provisions self-signed HTTPS certificates for local development.
 
@@ -13,30 +13,30 @@ gHTTP is a Go-powered file server that mirrors the ergonomics of `python -m http
 Pull and run the latest Docker image:
 
 ```bash
-docker pull ghcr.io/temirov/ghttp:latest
-docker run -p 8080:8080 -v $(pwd):/data ghcr.io/temirov/ghttp:latest --directory /data
+docker pull ghcr.io/tyemirov/ghttp:latest
+docker run -p 8080:8080 -v $(pwd):/data ghcr.io/tyemirov/ghttp:latest --directory /data
 ```
 
 Custom port and directory examples:
 
 ```bash
 # Serve current directory on port 9000
-docker run -p 9000:9000 -v $(pwd):/data ghcr.io/temirov/ghttp:latest --directory /data 9000
+docker run -p 9000:9000 -v $(pwd):/data ghcr.io/tyemirov/ghttp:latest --directory /data 9000
 
 # Serve with HTTPS (requires certificate setup)
-docker run -p 8443:8443 -v $(pwd):/data -v ~/.config/ghttp:/root/.config/ghttp ghcr.io/temirov/ghttp:latest --directory /data --https 8443
+docker run -p 8443:8443 -v $(pwd):/data -v ~/.config/ghttp:/root/.config/ghttp ghcr.io/tyemirov/ghttp:latest --directory /data --https 8443
 ```
 
 ### Releases
 
-Download the latest binaries from the [Releases page](https://github.com/temirov/ghttp/releases).
+Download the latest binaries from the [Releases page](https://github.com/tyemirov/ghttp/releases).
 
 ### Go toolchain
 
 Install gHTTP with the Go toolchain:
 
 ```
-go install github.com/temirov/ghttp/cmd/ghttp@latest
+go install github.com/tyemirov/ghttp/cmd/ghttp@latest
 ```
 
 Go 1.24.6 or newer is required, matching the minimum version declared in `go.mod`.

@@ -1,4 +1,4 @@
-module github.com/temirov/ghttp
+module github.com/tyemirov/ghttp
 
 go 1.24.6
 
