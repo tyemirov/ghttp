@@ -10,7 +10,7 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/temirov/ghttp/internal/markdown"
+	"github.com/tyemirov/ghttp/internal/markdown"
 )
 
 var directoryIndexCandidates = []string{"index.html", "index.htm"}

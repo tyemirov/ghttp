@@ -4,7 +4,7 @@ import (
 	"context"
 	"os"
 
-	"github.com/temirov/ghttp/internal/app"
+	"github.com/tyemirov/ghttp/internal/app"
 )
 
 func main() {
