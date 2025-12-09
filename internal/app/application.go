@@ -9,8 +9,8 @@ import (
 
 	"github.com/spf13/viper"
 
-	"github.com/temirov/ghttp/internal/certificates"
-	"github.com/temirov/ghttp/pkg/logging"
+	"github.com/tyemirov/ghttp/internal/certificates"
+	"github.com/tyemirov/ghttp/pkg/logging"
 )
 
 type contextKey string

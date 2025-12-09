@@ -11,7 +11,7 @@ import (
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
 
-	"github.com/temirov/ghttp/pkg/logging"
+	"github.com/tyemirov/ghttp/pkg/logging"
 )
 
 const (
