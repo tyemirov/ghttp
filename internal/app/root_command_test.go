@@ -7,7 +7,7 @@ import (
 	"github.com/spf13/pflag"
 	"github.com/spf13/viper"
 
-	"github.com/temirov/ghttp/pkg/logging"
+	"github.com/tyemirov/ghttp/pkg/logging"
 )
 
 func TestNewRootCommandProvidesHTTPSFlagOnce(t *testing.T) {
