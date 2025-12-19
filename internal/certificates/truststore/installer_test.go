@@ -10,7 +10,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/temirov/ghttp/internal/certificates"
+	"github.com/tyemirov/ghttp/internal/certificates"
 )
 
 type executedCommand struct {
