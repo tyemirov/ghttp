@@ -1,6 +1,7 @@
 package server
 
 import (
+	"bufio"
 	"context"
 	"crypto/tls"
 	"errors"
@@ -319,6 +320,14 @@ func (recorder *statusRecorder) Write(content []byte) (int, error) {
 	written, err := recorder.ResponseWriter.Write(content)
 	recorder.bytesWritten += written
 	return written, err
+}
+
+// Hijack implements http.Hijacker to support WebSocket connections through the logging middleware.
+func (recorder *statusRecorder) Hijack() (net.Conn, *bufio.ReadWriter, error) {
+	if hijacker, ok := recorder.ResponseWriter.(http.Hijacker); ok {
+		return hijacker.Hijack()
+	}
+	return nil, nil, errors.New("hijacking not supported by underlying ResponseWriter")
 }
 
 func newStatusRecorder(responseWriter http.ResponseWriter) *statusRecorder {
