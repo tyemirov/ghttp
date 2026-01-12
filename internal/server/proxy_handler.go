@@ -2,6 +2,7 @@ package server
 
 import (
 	"bufio"
+	"crypto/tls"
 	"io"
 	"net"
 	"net/http"
@@ -68,11 +69,23 @@ func (h *proxyHandler) isWebSocketUpgrade(r *http.Request) bool {
 func (h *proxyHandler) handleWebSocket(w http.ResponseWriter, r *http.Request) {
 	backendHost := h.backendURL.Host
 	scheme := "ws"
-	if h.backendURL.Scheme == "https" {
+	useTLS := h.backendURL.Scheme == "https"
+	if useTLS {
 		scheme = "wss"
 	}
 
-	backendConn, err := net.DialTimeout("tcp", backendHost, 10*time.Second)
+	var backendConn net.Conn
+	var err error
+
+	if useTLS {
+		dialer := &net.Dialer{Timeout: 10 * time.Second}
+		backendConn, err = tls.DialWithDialer(dialer, "tcp", backendHost, &tls.Config{
+			ServerName: hostWithoutPort(backendHost),
+		})
+	} else {
+		backendConn, err = net.DialTimeout("tcp", backendHost, 10*time.Second)
+	}
+
 	if err != nil {
 		http.Error(w, "Bad Gateway: failed to connect to backend", http.StatusBadGateway)
 		return
@@ -150,4 +163,12 @@ func cloneHeaders(src http.Header) http.Header {
 func copyWithBuffer(dst io.Writer, src io.Reader) {
 	buf := make([]byte, 32*1024)
 	io.CopyBuffer(dst, src, buf)
+}
+
+func hostWithoutPort(hostPort string) string {
+	host, _, err := net.SplitHostPort(hostPort)
+	if err != nil {
+		return hostPort
+	}
+	return host
 }
