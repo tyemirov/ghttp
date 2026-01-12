@@ -1,5 +1,22 @@
 # Changelog
 
+## v0.3.1 — 2026-01-12
+
+### Features ✨
+- _No changes._
+
+### Improvements ⚙️
+- Validate proxy backend URLs to fail fast on malformed URLs, ensuring only http or https schemes with valid hosts.
+
+### Bug Fixes 🐛
+- _No changes._
+
+### Testing 🧪
+- Add tests covering rejection of invalid proxy backend URLs including invalid schemes and missing hosts.
+
+### Docs 📚
+- _No changes._
+
 ## v0.3.0 — 2026-01-12
 
 ### Features ✨
