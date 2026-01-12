@@ -1,5 +1,33 @@
 # Changelog
 
+## v0.3.0 — 2026-01-12
+
+### Features ✨
+- Add reverse proxy capability with full WebSocket support, enabling proxying API requests alongside static file serving.
+- Support configuration of reverse proxy via environment variables and CLI flags.
+
+### Improvements ⚙️
+- Reformat Go files for consistency.
+- Refactor module namespace following owner rename.
+- Update dependencies including cobra, goldmark, zap, and gorilla/websocket.
+- Enhance Docker Compose integration documentation for AI agents.
+- Update README to reflect module rename and updated image paths.
+- Improve logging options with JSON format support.
+- Add environment variable configurations for TLS certificates and HTTPS.
+
+### Bug Fixes 🐛
+- Fix old import paths preventing compilation.
+- Use TLS protocol for WebSocket connections to HTTPS backends.
+
+### Testing 🧪
+- Add extensive tests for proxy handler including WebSocket support.
+- Minor test updates across root and serve command tests, and cert installer tests.
+
+### Docs 📚
+- Add detailed Docker Compose integration guide tailored for AI agents, including environment variable usage, HTTPS handling, and configuration patterns.
+- Update README with new release URLs and usage instructions.
+- Add issues documentation for new reverse proxy feature.
+
 ## v0.2.4 — 2025-10-10
 
 ### Features ✨
