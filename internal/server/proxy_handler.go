@@ -3,6 +3,7 @@ package server
 import (
 	"bufio"
 	"crypto/tls"
+	"errors"
 	"io"
 	"net"
 	"net/http"
@@ -27,10 +28,28 @@ type proxyHandler struct {
 	httpProxy  *httputil.ReverseProxy
 }
 
+var (
+	errInvalidProxyScheme = errors.New("proxy backend URL must use http or https scheme")
+	errInvalidProxyHost   = errors.New("proxy backend URL must have a valid host")
+)
+
 func newProxyHandler(next http.Handler, backendURL string, pathPrefix string) (http.Handler, error) {
 	parsedURL, err := url.Parse(backendURL)
 	if err != nil {
 		return nil, err
+	}
+
+	if parsedURL.Scheme != "http" && parsedURL.Scheme != "https" {
+		return nil, errInvalidProxyScheme
+	}
+	if parsedURL.Host == "" {
+		return nil, errInvalidProxyHost
+	}
+	// Detect malformed URLs like "http://http://..." where host becomes "http:"
+	// parsedURL.Host includes port if present, Hostname() strips it
+	host := parsedURL.Hostname()
+	if host == "" || strings.HasSuffix(parsedURL.Host, ":") || strings.Contains(host, "//") {
+		return nil, errInvalidProxyHost
 	}
 
 	proxy := httputil.NewSingleHostReverseProxy(parsedURL)
