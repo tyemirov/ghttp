@@ -53,12 +53,16 @@ func configureServeFlags(flagSet *pflag.FlagSet, configurationManager *viper.Vip
 	flagSet.Bool(flagNameNoMarkdown, configurationManager.GetBool(configKeyServeNoMarkdown), "Disable Markdown rendering")
 	flagSet.Bool(flagNameBrowse, configurationManager.GetBool(configKeyServeBrowse), "Browse directories without automatic rendering")
 	flagSet.String(flagNameLoggingType, configurationManager.GetString(configKeyServeLoggingType), "Logging type (CONSOLE or JSON)")
+	flagSet.String(flagNameProxyBackend, configurationManager.GetString(configKeyProxyBackend), "Backend URL to proxy requests to (e.g., http://backend:8001)")
+	flagSet.String(flagNameProxyPathPrefix, configurationManager.GetString(configKeyProxyPathPrefix), "Path prefix to proxy (e.g., /api/)")
 	_ = configurationManager.BindPFlag(configKeyServeBindAddress, flagSet.Lookup(flagNameBindAddress))
 	_ = configurationManager.BindPFlag(configKeyServeDirectory, flagSet.Lookup(flagNameDirectory))
 	_ = configurationManager.BindPFlag(configKeyServeProtocol, flagSet.Lookup(flagNameProtocol))
 	_ = configurationManager.BindPFlag(configKeyServeNoMarkdown, flagSet.Lookup(flagNameNoMarkdown))
 	_ = configurationManager.BindPFlag(configKeyServeBrowse, flagSet.Lookup(flagNameBrowse))
 	_ = configurationManager.BindPFlag(configKeyServeLoggingType, flagSet.Lookup(flagNameLoggingType))
+	_ = configurationManager.BindPFlag(configKeyProxyBackend, flagSet.Lookup(flagNameProxyBackend))
+	_ = configurationManager.BindPFlag(configKeyProxyPathPrefix, flagSet.Lookup(flagNameProxyPathPrefix))
 }
 
 func configureServeHTTPSOptions(flagSet *pflag.FlagSet, configurationManager *viper.Viper) {

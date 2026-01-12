@@ -40,6 +40,8 @@ const (
 	flagNameLoggingType        = "logging-type"
 	flagNameCertificateDir     = "cert-dir"
 	flagNameHTTPSHosts         = "host"
+	flagNameProxyBackend       = "proxy-backend"
+	flagNameProxyPathPrefix    = "proxy-path"
 
 	configKeyServeBindAddress        = "serve.bind_address"
 	configKeyServeDirectory          = "serve.directory"
@@ -54,6 +56,8 @@ const (
 	configKeyHTTPSCertificateDir     = "https.certificate_directory"
 	configKeyHTTPSHosts              = "https.hosts"
 	configKeyHTTPSPort               = "https.port"
+	configKeyProxyBackend            = "serve.proxy_backend"
+	configKeyProxyPathPrefix         = "serve.proxy_path_prefix"
 
 	logMessageFailedInitializeLogger = "failed to initialize logger"
 	logMessageResolveUserConfigDir   = "resolve user config directory"
@@ -124,6 +128,8 @@ func Execute(ctx context.Context, arguments []string) int {
 	configurationManager.SetDefault(configKeyHTTPSCertificateDir, filepath.Join(applicationConfigDir, certificates.DefaultCertificateDirectoryName))
 	configurationManager.SetDefault(configKeyHTTPSHosts, []string{"localhost", "127.0.0.1", "::1"})
 	configurationManager.SetDefault(configKeyHTTPSPort, defaultHTTPSServePort)
+	configurationManager.SetDefault(configKeyProxyBackend, "")
+	configurationManager.SetDefault(configKeyProxyPathPrefix, "")
 	resources := &applicationResources{
 		configurationManager: configurationManager,
 		loggingService:       initialService,
