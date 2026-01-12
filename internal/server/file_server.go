@@ -1,6 +1,7 @@
 package server
 
 import (
+	"bufio"
 	"context"
 	"crypto/tls"
 	"errors"
@@ -204,6 +205,19 @@ func (fileServer FileServer) Handler(configuration FileServerConfiguration) http
 	return fileServer.buildFileHandler(configuration)
 }
 
+// FullHandler returns the complete handler chain including headers and logging wrappers,
+// matching the exact code path used in production by Serve(). Use this for integration tests.
+func (fileServer FileServer) FullHandler(configuration FileServerConfiguration) http.Handler {
+	fileHandler := fileServer.buildFileHandler(configuration)
+	wrappedHandler := fileServer.wrapWithHeaders(fileHandler, configuration.ProtocolVersion)
+	loggingType := fileServer.loggingService.Type()
+	if configuration.LoggingType != "" {
+		loggingType = configuration.LoggingType
+	}
+	normalizedLoggingType, _ := logging.NormalizeType(loggingType)
+	return fileServer.wrapWithLogging(wrappedHandler, normalizedLoggingType)
+}
+
 func (fileServer FileServer) wrapWithHeaders(handler http.Handler, protocolVersion string) http.Handler {
 	return http.HandlerFunc(func(responseWriter http.ResponseWriter, request *http.Request) {
 		responseWriter.Header().Set(serverHeaderName, serverHeaderValue)
@@ -319,6 +333,14 @@ func (recorder *statusRecorder) Write(content []byte) (int, error) {
 	written, err := recorder.ResponseWriter.Write(content)
 	recorder.bytesWritten += written
 	return written, err
+}
+
+// Hijack implements http.Hijacker to support WebSocket connections through the logging middleware.
+func (recorder *statusRecorder) Hijack() (net.Conn, *bufio.ReadWriter, error) {
+	if hijacker, ok := recorder.ResponseWriter.(http.Hijacker); ok {
+		return hijacker.Hijack()
+	}
+	return nil, nil, errors.New("hijacking not supported by underlying ResponseWriter")
 }
 
 func newStatusRecorder(responseWriter http.ResponseWriter) *statusRecorder {
