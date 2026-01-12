@@ -1,5 +1,27 @@
 # Changelog
 
+## v0.3.2 — 2026-01-12
+
+### Features ✨
+- Added full handler chain method for production-equivalent integration tests.
+- Replaced all unit tests for proxy with comprehensive integration tests.
+
+### Improvements ⚙️
+- Implemented http.Hijacker on statusRecorder to support WebSocket connections through logging middleware.
+
+### Bug Fixes 🐛
+- _No changes._
+
+### Testing 🧪
+- Removed proxy unit tests; introduced extensive proxy integration tests covering:
+  - Backend forwarding and fallback.
+  - Query parameter and request body preservation.
+  - Handling backend errors and invalid URLs.
+  - WebSocket upgrade handling through full handler stack and logging middleware.
+
+### Docs 📚
+- _No changes._
+
 ## v0.3.1 — 2026-01-12
 
 ### Features ✨
