@@ -3,10 +3,10 @@ module github.com/tyemirov/ghttp
 go 1.25.4
 
 require (
+	github.com/gorilla/websocket v1.5.3
 	github.com/spf13/cobra v1.10.2
 	github.com/spf13/pflag v1.0.10
 	github.com/spf13/viper v1.21.0
-	github.com/temirov/ghttp v0.2.4
 	github.com/yuin/goldmark v1.7.13
 	go.uber.org/zap v1.27.1
 )

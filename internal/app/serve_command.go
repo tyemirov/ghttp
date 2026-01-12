@@ -44,6 +44,8 @@ type ServeConfiguration struct {
 	BrowseDirectories       bool
 	InitialFileRelativePath string
 	LoggingType             string
+	ProxyBackendURL         string
+	ProxyPathPrefix         string
 }
 
 func prepareServeConfiguration(cmd *cobra.Command, args []string, portConfigKey string, allowTLSFiles bool) error {
@@ -140,6 +142,10 @@ func prepareServeConfiguration(cmd *cobra.Command, args []string, portConfigKey 
 	if browseDirectories {
 		disableDirectoryListing = false
 	}
+
+	proxyBackendURL := strings.TrimSpace(configurationManager.GetString(configKeyProxyBackend))
+	proxyPathPrefix := strings.TrimSpace(configurationManager.GetString(configKeyProxyPathPrefix))
+
 	serveConfiguration := ServeConfiguration{
 		BindAddress:             bindAddress,
 		Port:                    portValue,
@@ -153,6 +159,8 @@ func prepareServeConfiguration(cmd *cobra.Command, args []string, portConfigKey 
 		BrowseDirectories:       browseDirectories,
 		InitialFileRelativePath: initialFileRelativePath,
 		LoggingType:             loggingTypeValue,
+		ProxyBackendURL:         proxyBackendURL,
+		ProxyPathPrefix:         proxyPathPrefix,
 	}
 
 	if loggerErr := resources.updateLogger(loggingTypeValue); loggerErr != nil {
@@ -190,6 +198,8 @@ func runServe(cmd *cobra.Command) error {
 		BrowseDirectories:       serveConfiguration.BrowseDirectories,
 		InitialFileRelativePath: serveConfiguration.InitialFileRelativePath,
 		LoggingType:             serveConfiguration.LoggingType,
+		ProxyBackendURL:         serveConfiguration.ProxyBackendURL,
+		ProxyPathPrefix:         serveConfiguration.ProxyPathPrefix,
 	}
 	if serveConfiguration.TLSCertificatePath != "" {
 		fileServerConfiguration.TLS = &server.TLSConfiguration{
