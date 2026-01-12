@@ -20,10 +20,10 @@ const (
 )
 
 type proxyHandler struct {
-	next        http.Handler
-	backendURL  *url.URL
-	pathPrefix  string
-	httpProxy   *httputil.ReverseProxy
+	next       http.Handler
+	backendURL *url.URL
+	pathPrefix string
+	httpProxy  *httputil.ReverseProxy
 }
 
 func newProxyHandler(next http.Handler, backendURL string, pathPrefix string) (http.Handler, error) {

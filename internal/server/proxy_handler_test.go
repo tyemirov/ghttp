@@ -140,10 +140,10 @@ func TestProxyHandlerDetectsWebSocketUpgrade(t *testing.T) {
 	handler := &proxyHandler{}
 
 	tests := []struct {
-		name           string
-		connectionHdr  string
-		upgradeHdr     string
-		expectUpgrade  bool
+		name          string
+		connectionHdr string
+		upgradeHdr    string
+		expectUpgrade bool
 	}{
 		{"websocket upgrade", "Upgrade", "websocket", true},
 		{"mixed case", "upgrade", "WebSocket", true},
