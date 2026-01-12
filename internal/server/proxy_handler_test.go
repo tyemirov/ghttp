@@ -136,6 +136,35 @@ func TestProxyHandlerReturns502OnBackendError(t *testing.T) {
 	}
 }
 
+func TestProxyHandlerRejectsInvalidURLs(t *testing.T) {
+	tests := []struct {
+		name        string
+		backendURL  string
+		expectError bool
+	}{
+		{"valid http", "http://localhost:8080", false},
+		{"valid https", "https://backend.example.com:443", false},
+		{"valid with path", "http://backend:8001/api", false},
+		{"double http scheme", "http://http://localhost:8080", true},
+		{"missing scheme", "localhost:8080", true},
+		{"ftp scheme", "ftp://localhost:8080", true},
+		{"empty host", "http://", true},
+		{"just scheme", "http:", true},
+	}
+
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			_, err := newProxyHandler(http.NotFoundHandler(), tc.backendURL, "/api/")
+			if tc.expectError && err == nil {
+				t.Errorf("expected error for URL %q, got none", tc.backendURL)
+			}
+			if !tc.expectError && err != nil {
+				t.Errorf("unexpected error for URL %q: %v", tc.backendURL, err)
+			}
+		})
+	}
+}
+
 func TestProxyHandlerDetectsWebSocketUpgrade(t *testing.T) {
 	handler := &proxyHandler{}
 
