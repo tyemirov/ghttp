@@ -66,6 +66,28 @@ After installation the `ghttp` binary is placed in `$GOBIN` (or `$GOPATH/bin`). 
 * Suppress automatic directory listings by exporting `GHTTPD_DISABLE_DIR_INDEX=1`; the handler returns HTTP 403 for directory roots.
 * Configure every flag via `~/.config/ghttp/config.yaml` or environment variables prefixed with `GHTTP_` (for example, `GHTTP_SERVE_DIRECTORY=/srv/www`).
 
+### Flags and environment variables
+Flags map to Viper configuration keys. Environment variables use the `GHTTP_` prefix with dots replaced by underscores.
+
+| Command scope | Flag | Environment variable | Notes |
+| --- | --- | --- | --- |
+| all commands | `--config` | n/a (flag-only) | Overrides the default config lookup (`~/.config/ghttp/config.yaml`). |
+| `ghttp`, `ghttp https serve` | `--bind` | `GHTTP_SERVE_BIND_ADDRESS` | Empty means all interfaces. |
+| `ghttp`, `ghttp https serve` | `--directory` | `GHTTP_SERVE_DIRECTORY` | Defaults to the working directory. |
+| `ghttp`, `ghttp https serve` | `--protocol` | `GHTTP_SERVE_PROTOCOL` | HTTP/1.0 or HTTP/1.1. |
+| `ghttp`, `ghttp https serve` | `--no-md` | `GHTTP_SERVE_NO_MARKDOWN` | Disables Markdown rendering. |
+| `ghttp`, `ghttp https serve` | `--browse` | `GHTTP_SERVE_BROWSE` | Overrides `GHTTPD_DISABLE_DIR_INDEX`. |
+| `ghttp`, `ghttp https serve` | `--logging-type` | `GHTTP_SERVE_LOGGING_TYPE` | CONSOLE or JSON. |
+| `ghttp`, `ghttp https serve` | `--proxy-backend` | `GHTTP_SERVE_PROXY_BACKEND` | Requires `--proxy-path`. |
+| `ghttp`, `ghttp https serve` | `--proxy-path` | `GHTTP_SERVE_PROXY_PATH_PREFIX` | Requires `--proxy-backend`. |
+| `ghttp` | `--tls-cert` | `GHTTP_SERVE_TLS_CERTIFICATE` | Provide with `--tls-key`; cannot combine with `--https`. |
+| `ghttp` | `--tls-key` | `GHTTP_SERVE_TLS_PRIVATE_KEY` | Provide with `--tls-cert`; cannot combine with `--https`. |
+| `ghttp` | `--https` | `GHTTP_SERVE_HTTPS` | Mutually exclusive with `--tls-cert` and `--tls-key`. |
+| `ghttp`, `ghttp https serve` | `--host` | `GHTTP_HTTPS_HOSTS` | Repeatable flag; env uses comma-separated list. |
+| `ghttp https` | `--cert-dir` | `GHTTP_HTTPS_CERTIFICATE_DIRECTORY` | Controls where generated certificates are stored. |
+
+Positional port arguments map to `GHTTP_SERVE_PORT` for `ghttp` and `GHTTP_HTTPS_PORT` for `ghttp https serve`.
+
 ### Browser trust behaviour
 | Browser | Trust source | Restart needed? | Notes |
 | --- | --- | --- | --- |
