@@ -72,7 +72,7 @@ Flags map to Viper configuration keys. Environment variables use the `GHTTP_` pr
 | Command scope | Flag | Environment variable | Notes |
 | --- | --- | --- | --- |
 | all commands | `--config` | n/a (flag-only) | Overrides the default config lookup (`~/.config/ghttp/config.yaml`). |
-| `ghttp`, `ghttp https serve` | `--bind` | `GHTTP_SERVE_BIND_ADDRESS` | Empty means all interfaces. |
+| `ghttp`, `ghttp https serve` | `--bind` | `GHTTP_SERVE_BIND_ADDRESS` | Empty means all interfaces; logs display `localhost` for empty/`0.0.0.0`/`127.0.0.1`. |
 | `ghttp`, `ghttp https serve` | `--directory` | `GHTTP_SERVE_DIRECTORY` | Defaults to the working directory. |
 | `ghttp`, `ghttp https serve` | `--protocol` | `GHTTP_SERVE_PROTOCOL` | HTTP/1.0 or HTTP/1.1. |
 | `ghttp`, `ghttp https serve` | `--no-md` | `GHTTP_SERVE_NO_MARKDOWN` | Disables Markdown rendering. |
