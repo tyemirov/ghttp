@@ -13,7 +13,6 @@ import (
 	"time"
 
 	"github.com/spf13/cobra"
-	"github.com/spf13/pflag"
 	"github.com/spf13/viper"
 
 	"github.com/tyemirov/ghttp/internal/certificates"
@@ -33,71 +32,6 @@ const (
 	logFieldCertificateDirectory         = "certificate_directory"
 	logFieldHosts                        = "hosts"
 )
-
-func newHTTPSCommand(resources *applicationResources, serveFlags *pflag.FlagSet, httpsOptionFlags *pflag.FlagSet) *cobra.Command {
-	httpsCommand := &cobra.Command{
-		Use:   "https",
-		Short: "Manage self-signed HTTPS certificates",
-	}
-
-	certificateDirDefault := resources.configurationManager.GetString(configKeyHTTPSCertificateDir)
-	httpsCommand.PersistentFlags().String(flagNameCertificateDir, certificateDirDefault, "Directory for generated certificates")
-	_ = resources.configurationManager.BindPFlag(configKeyHTTPSCertificateDir, httpsCommand.PersistentFlags().Lookup(flagNameCertificateDir))
-
-	httpsCommand.AddCommand(newHTTPSSetupCommand(resources))
-	httpsCommand.AddCommand(newHTTPSServeCommand(resources, serveFlags, httpsOptionFlags.Lookup(flagNameHTTPSHosts)))
-	httpsCommand.AddCommand(newHTTPSUninstallCommand(resources))
-
-	return httpsCommand
-}
-
-func newHTTPSSetupCommand(resources *applicationResources) *cobra.Command {
-	return &cobra.Command{
-		Use:   "setup",
-		Short: "Generate and install the development certificate authority",
-		RunE: func(cmd *cobra.Command, args []string) error {
-			return runHTTPSSetup(cmd)
-		},
-	}
-}
-
-func newHTTPSServeCommand(resources *applicationResources, serveFlags *pflag.FlagSet, hostFlag *pflag.Flag) *cobra.Command {
-	httpsServeCommand := &cobra.Command{
-		Use:           "serve [port]",
-		Short:         "Serve HTTPS using the generated certificates",
-		Args:          cobra.MaximumNArgs(1),
-		SilenceUsage:  true,
-		SilenceErrors: true,
-		PreRunE: func(cmd *cobra.Command, args []string) error {
-			if err := prepareServeConfiguration(cmd, args, configKeyHTTPSPort, false); err != nil {
-				return err
-			}
-			return prepareHTTPSContext(cmd)
-		},
-		RunE: func(cmd *cobra.Command, args []string) error {
-			return runHTTPSServe(cmd)
-		},
-	}
-
-	if serveFlags != nil {
-		httpsServeCommand.Flags().AddFlagSet(serveFlags)
-	}
-	if hostFlag != nil {
-		httpsServeCommand.Flags().AddFlag(hostFlag)
-	}
-
-	return httpsServeCommand
-}
-
-func newHTTPSUninstallCommand(resources *applicationResources) *cobra.Command {
-	return &cobra.Command{
-		Use:   "uninstall",
-		Short: "Remove the development certificate authority from the trust store",
-		RunE: func(cmd *cobra.Command, args []string) error {
-			return runHTTPSUninstall(cmd)
-		},
-	}
-}
 
 func runHTTPSSetup(cmd *cobra.Command) error {
 	resources, err := getApplicationResources(cmd)
@@ -128,41 +62,6 @@ func runHTTPSSetup(cmd *cobra.Command) error {
 
 	logCertificateMessage(resources, "certificate authority installed", certificateDirectory)
 	return nil
-}
-
-func runHTTPSServe(cmd *cobra.Command) error {
-	resources, err := getApplicationResources(cmd)
-	if err != nil {
-		return err
-	}
-	serveConfigurationValue := cmd.Context().Value(contextKeyServeConfiguration)
-	if serveConfigurationValue == nil {
-		return errors.New("serve configuration missing")
-	}
-	serveConfiguration, ok := serveConfigurationValue.(ServeConfiguration)
-	if !ok {
-		return errors.New("serve configuration type mismatch")
-	}
-
-	hostValue := cmd.Context().Value(contextKeyHTTPSHosts)
-	if hostValue == nil {
-		return errors.New("https hosts missing")
-	}
-	hosts, ok := hostValue.([]string)
-	if !ok {
-		return errors.New("https hosts type mismatch")
-	}
-
-	directoryValue := cmd.Context().Value(contextKeyHTTPSCertificateDir)
-	if directoryValue == nil {
-		return errors.New("certificate directory missing")
-	}
-	certificateDirectory, ok := directoryValue.(string)
-	if !ok {
-		return errors.New("certificate directory type mismatch")
-	}
-
-	return executeHTTPSServe(cmd, resources, serveConfiguration, hosts, certificateDirectory)
 }
 
 func executeHTTPSServe(cmd *cobra.Command, resources *applicationResources, serveConfiguration ServeConfiguration, hosts []string, certificateDirectory string) error {

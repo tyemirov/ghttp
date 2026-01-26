@@ -39,4 +39,9 @@ Add a `GHTTP_CONFIG_FILE` environment variable counterpart to the `--config` fla
 
 ## Maintenance (400–499)
 
+### 401: Remove manual HTTPS CLI workflow
+**Status:** Resolved
+
+Drop the `ghttp https` CLI subcommands so `--https` is the single self-managed certificate path. Keep internal HTTPS plumbing for automated flow.
+
 ## Planning

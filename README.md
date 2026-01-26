@@ -14,7 +14,7 @@ Pull and run the latest Docker image:
 
 ```bash
 docker pull ghcr.io/tyemirov/ghttp:latest
-docker run -p 8080:8080 -v $(pwd):/data ghcr.io/tyemirov/ghttp:latest --directory /data
+docker run -p 8000:8000 -v $(pwd):/data ghcr.io/tyemirov/ghttp:latest --directory /data
 ```
 
 Custom port and directory examples:
@@ -47,19 +47,17 @@ After installation the `ghttp` binary is placed in `$GOBIN` (or `$GOPATH/bin`). 
 
 | Scenario | Example command | Notes |
 | --- | --- | --- |
-| Serve the current working directory on the default port 8000 | `ghttp` | Mirrors `python -m http.server` with structured logging. |
+| Serve the current working directory on the default HTTP port 8000 | `ghttp` | Mirrors `python -m http.server` with structured logging. |
 | Serve a specific directory on a chosen port | `ghttp --directory /srv/www 9000` | Exposes `/srv/www` at <http://localhost:9000>. |
-| Bind to a specific interface | `ghttp --bind 192.168.1.5 8080` | Restricts listening to the provided IP address. |
+| Bind to a specific interface | `ghttp --bind 192.168.1.5 8000` | Restricts listening to the provided IP address. |
 | Serve HTTPS with an existing certificate | `ghttp --tls-cert cert.pem --tls-key key.pem 8443` | Keeps backwards-compatible manual TLS support. |
-| Provision and trust the development root CA | `ghttp https setup` | Generates `~/.config/ghttp/certs/ca.pem` and installs it into the OS trust store (may require elevated privileges). |
-| Serve HTTPS with self-signed certificates | `ghttp --https 8443` | Installs the development CA, serves HTTPS, and removes credentials on exit. |
+| Serve HTTPS with self-signed certificates | `ghttp --https` | Defaults to port 8443, installs the development CA, serves HTTPS, and removes credentials on exit. |
 | Disable Markdown rendering | `ghttp --no-md` | Serves raw Markdown assets without HTML conversion. |
 | Switch logging format | `ghttp --logging-type JSON` | Emits structured JSON logs instead of the default console view. |
-| Remove the development certificates | `ghttp https uninstall` | Deletes local key material and removes the CA from the OS trust store. |
 
 ### Key capabilities
 * Choose between HTTP/1.0 and HTTP/1.1 with `--protocol`/`-p`; the server tunes keep-alive behaviour automatically.
-* Provision a development certificate authority with `ghttp --https` (or `ghttp https setup` for manual control), storing it at `~/.config/ghttp/certs` and installing it into macOS, Linux, or Windows trust stores using native tooling.
+* Provision a development certificate authority with `ghttp --https`, storing it at `~/.config/ghttp/certs` and installing it into macOS, Linux, or Windows trust stores using native tooling.
 * Issue SAN-aware leaf certificates on demand whenever HTTPS is enabled, covering `localhost`, `127.0.0.1`, `::1`, and additional hosts supplied via repeated `--https-host` flags or Viper configuration.
 * Render Markdown files (`*.md`) to HTML automatically, treat `README.md` as a directory landing page, and skip the feature entirely with `--no-md` or `serve.no_markdown: true` in configuration.
 * When Firefox is installed, automatically configure its profiles to trust the generated certificates so browser warnings disappear on the next restart.
@@ -71,23 +69,25 @@ Flags map to Viper configuration keys. Environment variables use the `GHTTP_` pr
 
 | Flag | Environment variable | Notes |
 | --- | --- | --- |
+| `PORT` (positional) | `GHTTP_SERVE_PORT` | Defaults to 8000 for HTTP and 8443 when `--https` is enabled. |
 | `--config` | `GHTTP_CONFIG_FILE` | Overrides the default config lookup (`~/.config/ghttp/config.yaml`). |
 | `--bind` | `GHTTP_SERVE_BIND_ADDRESS` | Empty means all interfaces; logs display `localhost` for empty/`0.0.0.0`/`127.0.0.1`. |
-| `--directory` | `GHTTP_SERVE_DIRECTORY` | Defaults to the working directory. |
-| `--protocol` | `GHTTP_SERVE_PROTOCOL` | HTTP/1.0 or HTTP/1.1. |
+| `--directory` | `GHTTP_SERVE_DIRECTORY` | Directory to serve files from. Defaults to the working directory. |
+| `--protocol` | `GHTTP_SERVE_PROTOCOL` | HTTP protocol version (use the full value, for example, `HTTP/1.0` or `HTTP/1.1`). |
 | `--no-md` | `GHTTP_SERVE_NO_MARKDOWN` | Disables Markdown rendering. |
-| `--browse` | `GHTTP_SERVE_BROWSE` | Overrides `GHTTPD_DISABLE_DIR_INDEX`. |
+| `--browse` | `GHTTP_SERVE_BROWSE` | Folder URLs always return a directory listing, even if index.html or README.md exists; direct file requests (including .md) still render normally. Overrides `GHTTPD_DISABLE_DIR_INDEX`. |
 | `--logging-type` | `GHTTP_SERVE_LOGGING_TYPE` | CONSOLE or JSON. |
-| `--proxy` | `GHTTP_SERVE_PROXIES` | Repeatable from=to mapping (for example, `/api=http://backend:8081`); backend can be `http://` or `https://` regardless of frontend scheme; env uses comma-separated list. |
+| `--proxy` | `GHTTP_SERVE_PROXIES` | Enables reverse proxy. Repeatable from=to mapping (for example, `/api=http://backend:8081`); backend can be `http://` or `https://` regardless of frontend scheme; env uses comma-separated list. |
+| `--proxy-path` | `GHTTP_SERVE_PROXY_PATH_PREFIX` | Legacy from-path prefix (for example, `/api`); requires `--proxy-backend`. |
+| `--proxy-backend` | `GHTTP_SERVE_PROXY_BACKEND` | Legacy to-backend URL (for example, `http://backend:8081`); requires `--proxy-path`. |
 | `--https` | `GHTTP_SERVE_HTTPS` | Enables self-signed HTTPS using the development certificate authority (SANs from `--https-host`); mutually exclusive with `--tls-cert` and `--tls-key`. |
 | `--https-host` | `GHTTP_HTTPS_HOSTS` | Repeatable flag; env uses comma-separated list; only used with `--https` and included in generated HTTPS certificates. |
-| `--https-cert-dir` | `GHTTP_HTTPS_CERTIFICATE_DIRECTORY` | Controls where generated certificates are stored. |
 | `--tls-cert` | `GHTTP_SERVE_TLS_CERTIFICATE` | Provide with `--tls-key`; cannot combine with `--https`. |
 | `--tls-key` | `GHTTP_SERVE_TLS_PRIVATE_KEY` | Provide with `--tls-cert`; cannot combine with `--https`. |
 
 Legacy single mapping: `--proxy-path` (from) + `--proxy-backend` (to) remain supported when `--proxy`/`GHTTP_SERVE_PROXIES` are unset.
 
-Positional port arguments map to `GHTTP_SERVE_PORT` for `ghttp` and `GHTTP_HTTPS_PORT` for `ghttp https serve`.
+Positional port arguments map to `GHTTP_SERVE_PORT` for `ghttp`. When no port is provided, gHTTP defaults to 8000 for HTTP and 8443 when `--https` is enabled.
 
 
 ### Browser trust behaviour
