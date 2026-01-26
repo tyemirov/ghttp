@@ -1,5 +1,24 @@
 # Changelog
 
+## v0.4.1 — 2026-01-26
+
+### Features ✨
+- Introduce proxy mapping normalization for `GHTTP_SERVE_PROXIES`.
+- Move proxy configuration validation to the edge.
+
+### Improvements ⚙️
+- Update Docker Compose documentation accuracy for image references, configuration precedence, and environment variables.
+
+### Bug Fixes 🐛
+- Normalize `GHTTP_SERVE_PROXIES` to correctly parse comma-delimited proxy mappings.
+
+### Testing 🧪
+- Add test to verify splitting of comma-delimited proxy mappings in proxy configuration.
+
+### Docs 📚
+- Enhance documentation on proxy configuration and Docker Compose integration settings.
+- Add `ISSUES.md` entries for proxy mapping normalization and documentation updates.
+
 ## v0.4.0 — 2026-01-26
 
 ### Features ✨
