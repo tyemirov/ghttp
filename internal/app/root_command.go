@@ -40,6 +40,7 @@ func newRootCommand(resources *applicationResources) *cobra.Command {
 	_ = resources.configurationManager.BindPFlag(configKeyServeTLSKeyPath, rootCommand.Flags().Lookup(flagNameTLSKeyPath))
 
 	rootCommand.PersistentFlags().String(flagNameConfigFile, "", "Path to configuration file")
+	_ = resources.configurationManager.BindPFlag(configKeyConfigFile, rootCommand.PersistentFlags().Lookup(flagNameConfigFile))
 
 	rootCommand.AddCommand(newHTTPSCommand(resources, serveFlags, httpsOptionFlags))
 

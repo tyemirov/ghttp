@@ -30,6 +30,11 @@ Add repeatable proxy mappings with explicit from/to semantics (`--proxy /api=htt
 
 ## Improvements (200–299)
 
+### 201: Config file env var
+**Status:** Resolved
+
+Add a `GHTTP_CONFIG_FILE` environment variable counterpart to the `--config` flag so the configuration file path can be set via environment.
+
 ## BugFixes (300–399)
 
 ## Maintenance (400–499)

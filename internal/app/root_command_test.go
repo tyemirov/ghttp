@@ -80,3 +80,25 @@ func TestRootCommandBindsBrowseFlag(t *testing.T) {
 		t.Fatalf("expected browse flag to bind configuration")
 	}
 }
+
+func TestRootCommandBindsConfigFlag(t *testing.T) {
+	configurationManager := viper.New()
+	resources := &applicationResources{
+		configurationManager: configurationManager,
+		loggingService:       logging.NewTestService(logging.TypeConsole),
+		defaultConfigDirPath: t.TempDir(),
+	}
+
+	rootCommand := newRootCommand(resources)
+	rootCommand.SetArgs([]string{"--config", "/tmp/ghttp.yaml"})
+	rootCommand.SetContext(context.WithValue(context.Background(), contextKeyApplicationResources, resources))
+
+	parseErr := rootCommand.ParseFlags([]string{"--config", "/tmp/ghttp.yaml"})
+	if parseErr != nil {
+		t.Fatalf("parse flags: %v", parseErr)
+	}
+
+	if configurationManager.GetString(configKeyConfigFile) != "/tmp/ghttp.yaml" {
+		t.Fatalf("expected config flag to bind configuration")
+	}
+}

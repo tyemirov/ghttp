@@ -353,3 +353,31 @@ func TestPrepareServeConfigurationResolvesProxyRoutes(testingInstance *testing.T
 		})
 	}
 }
+
+func TestLoadConfigurationFileUsesConfiguredPath(testingInstance *testing.T) {
+	temporaryDirectory := testingInstance.TempDir()
+	configPath := pathpkg.Join(temporaryDirectory, "custom.yaml")
+	configContent := []byte("serve:\n  port: \"9001\"\n")
+	if writeErr := os.WriteFile(configPath, configContent, 0o600); writeErr != nil {
+		testingInstance.Fatalf("write config: %v", writeErr)
+	}
+
+	configurationManager := viper.New()
+	configurationManager.Set(configKeyConfigFile, configPath)
+	resources := &applicationResources{
+		configurationManager: configurationManager,
+		loggingService:       logging.NewTestService(logging.TypeConsole),
+		defaultConfigDirPath: testingInstance.TempDir(),
+	}
+
+	command := &cobra.Command{}
+	command.SetContext(context.WithValue(context.Background(), contextKeyApplicationResources, resources))
+
+	if err := loadConfigurationFile(command); err != nil {
+		testingInstance.Fatalf("load configuration file: %v", err)
+	}
+
+	if configurationManager.GetString(configKeyServePort) != "9001" {
+		testingInstance.Fatalf("expected serve.port from config file to be loaded")
+	}
+}
