@@ -74,6 +74,9 @@ The CLI uses Viper with an `env` prefix of `GHTTP` and replaces dots in configur
 - `serve.logging_type` → `GHTTP_SERVE_LOGGING_TYPE`
   - Logging format: `"CONSOLE"` (human-oriented) or `"JSON"` (machine-oriented).
   - Default: `"CONSOLE"`.
+- `serve.proxies` → `GHTTP_SERVE_PROXIES`
+  - Comma-separated list of from=to mappings (for example, `/api=http://backend:8081`).
+  - Use multiple entries to proxy multiple path prefixes.
 - `serve.tls_certificate` → `GHTTP_SERVE_TLS_CERTIFICATE`
   - Path inside the container to a PEM-encoded TLS certificate.
   - Used together with `GHTTP_SERVE_TLS_PRIVATE_KEY`.
@@ -230,4 +233,3 @@ For robust integration, AI agents should:
 - Keep volume mounts read-only (`:ro`) for static content, unless there is a documented need for write access.
 
 Following these guidelines will produce predictable and maintainable Docker Compose configurations that work correctly with the current gHTTP container image and CLI behavior.
-

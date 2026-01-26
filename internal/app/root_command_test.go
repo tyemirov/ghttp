@@ -26,7 +26,7 @@ func TestNewRootCommandProvidesHTTPSFlagOnce(t *testing.T) {
 
 	rootCommand := newRootCommand(resources)
 	if rootCommand.Flags().Lookup(flagNameHTTPSHosts) == nil {
-		t.Fatalf("expected host flag to be registered")
+		t.Fatalf("expected https-host flag to be registered")
 	}
 
 	httpsResources := &applicationResources{
@@ -42,6 +42,20 @@ func TestNewRootCommandProvidesHTTPSFlagOnce(t *testing.T) {
 	httpsCommand := newHTTPSCommand(httpsResources, serveFlags, httpsOptionFlags)
 	if httpsCommand.Use != "https" {
 		t.Fatalf("unexpected https command use: %s", httpsCommand.Use)
+	}
+}
+
+func TestNewRootCommandProvidesProxyFlag(testingInstance *testing.T) {
+	configurationManager := viper.New()
+	resources := &applicationResources{
+		configurationManager: configurationManager,
+		loggingService:       logging.NewTestService(logging.TypeConsole),
+		defaultConfigDirPath: testingInstance.TempDir(),
+	}
+
+	rootCommand := newRootCommand(resources)
+	if rootCommand.Flags().Lookup(flagNameProxy) == nil {
+		testingInstance.Fatalf("expected proxy flag to be registered")
 	}
 }
 

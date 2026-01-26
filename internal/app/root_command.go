@@ -53,6 +53,7 @@ func configureServeFlags(flagSet *pflag.FlagSet, configurationManager *viper.Vip
 	flagSet.Bool(flagNameNoMarkdown, configurationManager.GetBool(configKeyServeNoMarkdown), "Disable Markdown rendering")
 	flagSet.Bool(flagNameBrowse, configurationManager.GetBool(configKeyServeBrowse), "Browse directories without automatic rendering")
 	flagSet.String(flagNameLoggingType, configurationManager.GetString(configKeyServeLoggingType), "Logging type (CONSOLE or JSON)")
+	flagSet.StringSlice(flagNameProxy, configurationManager.GetStringSlice(configKeyServeProxies), "Proxy mapping in the form /from=http://backend:8081 (repeatable)")
 	flagSet.String(flagNameProxyBackend, configurationManager.GetString(configKeyProxyBackend), "Backend URL to proxy requests to (e.g., http://backend:8001)")
 	flagSet.String(flagNameProxyPathPrefix, configurationManager.GetString(configKeyProxyPathPrefix), "Path prefix to proxy (e.g., /api/)")
 	_ = configurationManager.BindPFlag(configKeyServeBindAddress, flagSet.Lookup(flagNameBindAddress))
@@ -61,13 +62,14 @@ func configureServeFlags(flagSet *pflag.FlagSet, configurationManager *viper.Vip
 	_ = configurationManager.BindPFlag(configKeyServeNoMarkdown, flagSet.Lookup(flagNameNoMarkdown))
 	_ = configurationManager.BindPFlag(configKeyServeBrowse, flagSet.Lookup(flagNameBrowse))
 	_ = configurationManager.BindPFlag(configKeyServeLoggingType, flagSet.Lookup(flagNameLoggingType))
+	_ = configurationManager.BindPFlag(configKeyServeProxies, flagSet.Lookup(flagNameProxy))
 	_ = configurationManager.BindPFlag(configKeyProxyBackend, flagSet.Lookup(flagNameProxyBackend))
 	_ = configurationManager.BindPFlag(configKeyProxyPathPrefix, flagSet.Lookup(flagNameProxyPathPrefix))
 }
 
 func configureServeHTTPSOptions(flagSet *pflag.FlagSet, configurationManager *viper.Viper) {
 	flagSet.Bool(flagNameHTTPS, configurationManager.GetBool(configKeyServeHTTPS), "Serve over HTTPS using a self-signed certificate")
-	flagSet.StringSlice(flagNameHTTPSHosts, configurationManager.GetStringSlice(configKeyHTTPSHosts), "Hostnames or IP addresses for automatic HTTPS certificates")
+	flagSet.StringSlice(flagNameHTTPSHosts, configurationManager.GetStringSlice(configKeyHTTPSHosts), "Hostnames or IP addresses included in generated HTTPS certificates (only used with --https)")
 	_ = configurationManager.BindPFlag(configKeyServeHTTPS, flagSet.Lookup(flagNameHTTPS))
 	_ = configurationManager.BindPFlag(configKeyHTTPSHosts, flagSet.Lookup(flagNameHTTPSHosts))
 }

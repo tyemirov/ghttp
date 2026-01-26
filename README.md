@@ -60,7 +60,7 @@ After installation the `ghttp` binary is placed in `$GOBIN` (or `$GOPATH/bin`). 
 ### Key capabilities
 * Choose between HTTP/1.0 and HTTP/1.1 with `--protocol`/`-p`; the server tunes keep-alive behaviour automatically.
 * Provision a development certificate authority with `ghttp --https` (or `ghttp https setup` for manual control), storing it at `~/.config/ghttp/certs` and installing it into macOS, Linux, or Windows trust stores using native tooling.
-* Issue SAN-aware leaf certificates on demand whenever HTTPS is enabled, covering `localhost`, `127.0.0.1`, `::1`, and additional hosts supplied via repeated `--host` flags or Viper configuration.
+* Issue SAN-aware leaf certificates on demand whenever HTTPS is enabled, covering `localhost`, `127.0.0.1`, `::1`, and additional hosts supplied via repeated `--https-host` flags or Viper configuration.
 * Render Markdown files (`*.md`) to HTML automatically, treat `README.md` as a directory landing page, and skip the feature entirely with `--no-md` or `serve.no_markdown: true` in configuration.
 * When Firefox is installed, automatically configure its profiles to trust the generated certificates so browser warnings disappear on the next restart.
 * Suppress automatic directory listings by exporting `GHTTPD_DISABLE_DIR_INDEX=1`; the handler returns HTTP 403 for directory roots.
@@ -69,24 +69,26 @@ After installation the `ghttp` binary is placed in `$GOBIN` (or `$GOPATH/bin`). 
 ### Flags and environment variables
 Flags map to Viper configuration keys. Environment variables use the `GHTTP_` prefix with dots replaced by underscores.
 
-| Command scope | Flag | Environment variable | Notes |
-| --- | --- | --- | --- |
-| all commands | `--config` | n/a (flag-only) | Overrides the default config lookup (`~/.config/ghttp/config.yaml`). |
-| `ghttp`, `ghttp https serve` | `--bind` | `GHTTP_SERVE_BIND_ADDRESS` | Empty means all interfaces; logs display `localhost` for empty/`0.0.0.0`/`127.0.0.1`. |
-| `ghttp`, `ghttp https serve` | `--directory` | `GHTTP_SERVE_DIRECTORY` | Defaults to the working directory. |
-| `ghttp`, `ghttp https serve` | `--protocol` | `GHTTP_SERVE_PROTOCOL` | HTTP/1.0 or HTTP/1.1. |
-| `ghttp`, `ghttp https serve` | `--no-md` | `GHTTP_SERVE_NO_MARKDOWN` | Disables Markdown rendering. |
-| `ghttp`, `ghttp https serve` | `--browse` | `GHTTP_SERVE_BROWSE` | Overrides `GHTTPD_DISABLE_DIR_INDEX`. |
-| `ghttp`, `ghttp https serve` | `--logging-type` | `GHTTP_SERVE_LOGGING_TYPE` | CONSOLE or JSON. |
-| `ghttp`, `ghttp https serve` | `--proxy-backend` | `GHTTP_SERVE_PROXY_BACKEND` | Requires `--proxy-path`. |
-| `ghttp`, `ghttp https serve` | `--proxy-path` | `GHTTP_SERVE_PROXY_PATH_PREFIX` | Requires `--proxy-backend`. |
-| `ghttp` | `--tls-cert` | `GHTTP_SERVE_TLS_CERTIFICATE` | Provide with `--tls-key`; cannot combine with `--https`. |
-| `ghttp` | `--tls-key` | `GHTTP_SERVE_TLS_PRIVATE_KEY` | Provide with `--tls-cert`; cannot combine with `--https`. |
-| `ghttp` | `--https` | `GHTTP_SERVE_HTTPS` | Mutually exclusive with `--tls-cert` and `--tls-key`. |
-| `ghttp`, `ghttp https serve` | `--host` | `GHTTP_HTTPS_HOSTS` | Repeatable flag; env uses comma-separated list. |
-| `ghttp https` | `--cert-dir` | `GHTTP_HTTPS_CERTIFICATE_DIRECTORY` | Controls where generated certificates are stored. |
+| Flag | Environment variable | Notes |
+| --- | --- | --- |
+| `--config` | n/a (flag-only) | Overrides the default config lookup (`~/.config/ghttp/config.yaml`). |
+| `--bind` | `GHTTP_SERVE_BIND_ADDRESS` | Empty means all interfaces; logs display `localhost` for empty/`0.0.0.0`/`127.0.0.1`. |
+| `--directory` | `GHTTP_SERVE_DIRECTORY` | Defaults to the working directory. |
+| `--protocol` | `GHTTP_SERVE_PROTOCOL` | HTTP/1.0 or HTTP/1.1. |
+| `--no-md` | `GHTTP_SERVE_NO_MARKDOWN` | Disables Markdown rendering. |
+| `--browse` | `GHTTP_SERVE_BROWSE` | Overrides `GHTTPD_DISABLE_DIR_INDEX`. |
+| `--logging-type` | `GHTTP_SERVE_LOGGING_TYPE` | CONSOLE or JSON. |
+| `--proxy` | `GHTTP_SERVE_PROXIES` | Repeatable from=to mapping (for example, `/api=http://backend:8081`); backend can be `http://` or `https://` regardless of frontend scheme; env uses comma-separated list. |
+| `--https` | `GHTTP_SERVE_HTTPS` | Enables self-signed HTTPS using the development certificate authority (SANs from `--https-host`); mutually exclusive with `--tls-cert` and `--tls-key`. |
+| `--https-host` | `GHTTP_HTTPS_HOSTS` | Repeatable flag; env uses comma-separated list; only used with `--https` and included in generated HTTPS certificates. |
+| `--https-cert-dir` | `GHTTP_HTTPS_CERTIFICATE_DIRECTORY` | Controls where generated certificates are stored. |
+| `--tls-cert` | `GHTTP_SERVE_TLS_CERTIFICATE` | Provide with `--tls-key`; cannot combine with `--https`. |
+| `--tls-key` | `GHTTP_SERVE_TLS_PRIVATE_KEY` | Provide with `--tls-cert`; cannot combine with `--https`. |
+
+Legacy single mapping: `--proxy-path` (from) + `--proxy-backend` (to) remain supported when `--proxy`/`GHTTP_SERVE_PROXIES` are unset.
 
 Positional port arguments map to `GHTTP_SERVE_PORT` for `ghttp` and `GHTTP_HTTPS_PORT` for `ghttp https serve`.
+
 
 ### Browser trust behaviour
 | Browser | Trust source | Restart needed? | Notes |

@@ -23,6 +23,11 @@ Or via flags:
 - WebSocket proxying via TCP connection hijacking
 - Falls back to static file serving for non-matching paths
 
+### 101: Repeatable proxy mappings via --proxy
+**Status:** Unresolved
+
+Add repeatable proxy mappings with explicit from/to semantics (`--proxy /api=http://backend:8081`) and support `GHTTP_SERVE_PROXIES=/api=http://...,/ws=http://...` for configuration. Keep from/to behavior explicit and allow multiple mappings.
+
 ## Improvements (200–299)
 
 ## BugFixes (300–399)

@@ -18,7 +18,7 @@ type contextKey string
 const (
 	contextKeyApplicationResources contextKey = "application-resources"
 	contextKeyServeConfiguration   contextKey = "serve-configuration"
-	contextKeyHTTPSHosts           contextKey = "https-hosts"
+	contextKeyHTTPSHosts           contextKey = "https-host"
 	contextKeyHTTPSCertificateDir  contextKey = "https-certificate-directory"
 
 	defaultServePort       = "8000"
@@ -38,8 +38,9 @@ const (
 	flagNameHTTPS              = "https"
 	flagNameBrowse             = "browse"
 	flagNameLoggingType        = "logging-type"
-	flagNameCertificateDir     = "cert-dir"
-	flagNameHTTPSHosts         = "host"
+	flagNameCertificateDir     = "https-cert-dir"
+	flagNameHTTPSHosts         = "https-host"
+	flagNameProxy              = "proxy"
 	flagNameProxyBackend       = "proxy-backend"
 	flagNameProxyPathPrefix    = "proxy-path"
 
@@ -56,6 +57,7 @@ const (
 	configKeyHTTPSCertificateDir     = "https.certificate_directory"
 	configKeyHTTPSHosts              = "https.hosts"
 	configKeyHTTPSPort               = "https.port"
+	configKeyServeProxies            = "serve.proxies"
 	configKeyProxyBackend            = "serve.proxy_backend"
 	configKeyProxyPathPrefix         = "serve.proxy_path_prefix"
 
@@ -128,6 +130,7 @@ func Execute(ctx context.Context, arguments []string) int {
 	configurationManager.SetDefault(configKeyHTTPSCertificateDir, filepath.Join(applicationConfigDir, certificates.DefaultCertificateDirectoryName))
 	configurationManager.SetDefault(configKeyHTTPSHosts, []string{"localhost", "127.0.0.1", "::1"})
 	configurationManager.SetDefault(configKeyHTTPSPort, defaultHTTPSServePort)
+	configurationManager.SetDefault(configKeyServeProxies, []string{})
 	configurationManager.SetDefault(configKeyProxyBackend, "")
 	configurationManager.SetDefault(configKeyProxyPathPrefix, "")
 	resources := &applicationResources{
