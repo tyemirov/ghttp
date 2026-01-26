@@ -1,5 +1,34 @@
 # Changelog
 
+## v0.4.0 — 2026-01-26
+
+### Features ✨
+- Introduce repeatable proxy mappings with explicit from/to semantics via `--proxy` flag and `GHTTP_SERVE_PROXIES` environment variable.
+- Add environment variable support for specifying configuration file path (`GHTTP_CONFIG_FILE`).
+- Default HTTPS port selection integrated into serve command; manual HTTPS CLI workflow removed.
+
+### Improvements ⚙️
+- Align default port documentation and move validation logic to the edge.
+- Update Dockerfile to expose port 8000 to match default HTTP port.
+- Clarify bind address logging in documentation.
+- Refine HTTPS flags and add coverage tests.
+- Enhance proxy routing and add coverage for proxy mappings.
+- Update README examples to reflect default port 8000 for HTTP and 8443 for HTTPS.
+- Add detailed flags and environment variables documentation.
+
+### Bug Fixes 🐛
+- Remove manual HTTPS CLI subcommands, consolidating HTTPS management under a single flag.
+- Fix legacy proxy flags to coexist properly with new repeatable proxy mappings.
+
+### Testing 🧪
+- Add extensive tests for proxy routes, proxy handler, serve command, and HTTPS flag behaviors.
+
+### Docs 📚
+- Clarify environment variable mappings for CLI flags in README.
+- Update Docker Compose examples and documentation to default port 8000.
+- Expand ISSUES.md with planning entries for repeatable proxies and HTTPS CLI removal.
+- Document proxy configuration and behavior improvements.
+
 ## v0.3.2 — 2026-01-12
 
 ### Features ✨
