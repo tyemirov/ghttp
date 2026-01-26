@@ -13,7 +13,7 @@ The goals are:
 - Image: `ghcr.io/temirov/ghttp:latest`
 - Entrypoint: `/app/ghttp`
 - Default listen port: `8000` for HTTP, `8443` when `serve.https` is true
-- Container metadata: `EXPOSE 8080` in the Dockerfile
+- Container metadata: `EXPOSE 8000` in the Dockerfile
 - Default serve directory: current working directory (`.` inside `/app`)
 - Configuration sources (highest precedence last):
   - CLI flags (e.g. `--directory`, positional `PORT`)
@@ -24,7 +24,7 @@ For most Compose use cases, prefer environment variables over configuration file
 
 ## Minimal service template
 
-This pattern serves static content from a host directory using HTTP on port `8080`:
+This pattern serves static content from a host directory using HTTP on port `8000`:
 
 ```yaml
 services:
@@ -32,12 +32,12 @@ services:
     image: ghcr.io/temirov/ghttp:latest
     restart: unless-stopped
     ports:
-      - "8080:8080"
+      - "8000:8000"
     volumes:
       - ./public:/data:ro
     environment:
       GHTTP_SERVE_DIRECTORY: /data
-      GHTTP_SERVE_PORT: "8080"
+      GHTTP_SERVE_PORT: "8000"
       GHTTP_SERVE_LOGGING_TYPE: JSON
 ```
 
@@ -45,7 +45,7 @@ Behavior:
 
 - The container runs `ghttp` as PID 1 with working directory `/app`.
 - `GHTTP_SERVE_DIRECTORY=/data` instructs gHTTP to serve the mounted directory instead of `/app`.
-- `GHTTP_SERVE_PORT=8080` makes gHTTP listen on container port `8080`, matching the Dockerfile `EXPOSE` directive and the Compose port mapping.
+- `GHTTP_SERVE_PORT=8000` makes gHTTP listen on container port `8000`, matching the Dockerfile `EXPOSE` directive and the Compose port mapping.
 - `GHTTP_SERVE_LOGGING_TYPE=JSON` produces structured logs on stdout, which is better for log collection and automated analysis.
 
 ## Configuration via environment variables
@@ -115,13 +115,13 @@ services:
   ghttp:
     image: ghcr.io/temirov/ghttp:latest
     ports:
-      - "8080:8080"
+      - "8000:8000"
     volumes:
       - ./public:/data:ro
     command:
       - --directory
       - /data
-      - "8080"
+      - "8000"
 ```
 
 Notes for agents:
@@ -183,7 +183,7 @@ Use gHTTP as a standalone static file server fronted by a single port. This is t
 
 - A host directory with static assets, mounted into the container (for example, `./public:/data:ro`).
 - `GHTTP_SERVE_DIRECTORY=/data`.
-- A port mapping from host to container (for example, `"8080:8080"` with `GHTTP_SERVE_PORT=8080`).
+- A port mapping from host to container (for example, `"8000:8000"` with `GHTTP_SERVE_PORT=8000`).
 
 ### 2. Sidecar for another service
 

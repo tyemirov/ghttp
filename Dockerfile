@@ -34,6 +34,6 @@ LABEL org.temirov.ghttp.runtime-image=gcr.io/distroless/base-debian12
 WORKDIR /app
 COPY --from=builder /out/ghttp /app/ghttp
 USER 65532:65532
-EXPOSE 8080
+EXPOSE 8000
 ENTRYPOINT ["/app/ghttp"]
     

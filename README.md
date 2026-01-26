@@ -14,7 +14,7 @@ Pull and run the latest Docker image:
 
 ```bash
 docker pull ghcr.io/tyemirov/ghttp:latest
-docker run -p 8080:8080 -v $(pwd):/data ghcr.io/tyemirov/ghttp:latest --directory /data
+docker run -p 8000:8000 -v $(pwd):/data ghcr.io/tyemirov/ghttp:latest --directory /data
 ```
 
 Custom port and directory examples:
@@ -49,7 +49,7 @@ After installation the `ghttp` binary is placed in `$GOBIN` (or `$GOPATH/bin`). 
 | --- | --- | --- |
 | Serve the current working directory on the default HTTP port 8000 | `ghttp` | Mirrors `python -m http.server` with structured logging. |
 | Serve a specific directory on a chosen port | `ghttp --directory /srv/www 9000` | Exposes `/srv/www` at <http://localhost:9000>. |
-| Bind to a specific interface | `ghttp --bind 192.168.1.5 8080` | Restricts listening to the provided IP address. |
+| Bind to a specific interface | `ghttp --bind 192.168.1.5 8000` | Restricts listening to the provided IP address. |
 | Serve HTTPS with an existing certificate | `ghttp --tls-cert cert.pem --tls-key key.pem 8443` | Keeps backwards-compatible manual TLS support. |
 | Serve HTTPS with self-signed certificates | `ghttp --https` | Defaults to port 8443, installs the development CA, serves HTTPS, and removes credentials on exit. |
 | Disable Markdown rendering | `ghttp --no-md` | Serves raw Markdown assets without HTML conversion. |
@@ -78,6 +78,8 @@ Flags map to Viper configuration keys. Environment variables use the `GHTTP_` pr
 | `--browse` | `GHTTP_SERVE_BROWSE` | Folder URLs always return a directory listing, even if index.html or README.md exists; direct file requests (including .md) still render normally. Overrides `GHTTPD_DISABLE_DIR_INDEX`. |
 | `--logging-type` | `GHTTP_SERVE_LOGGING_TYPE` | CONSOLE or JSON. |
 | `--proxy` | `GHTTP_SERVE_PROXIES` | Enables reverse proxy. Repeatable from=to mapping (for example, `/api=http://backend:8081`); backend can be `http://` or `https://` regardless of frontend scheme; env uses comma-separated list. |
+| `--proxy-path` | `GHTTP_SERVE_PROXY_PATH_PREFIX` | Legacy from-path prefix (for example, `/api`); requires `--proxy-backend`. |
+| `--proxy-backend` | `GHTTP_SERVE_PROXY_BACKEND` | Legacy to-backend URL (for example, `http://backend:8081`); requires `--proxy-path`. |
 | `--https` | `GHTTP_SERVE_HTTPS` | Enables self-signed HTTPS using the development certificate authority (SANs from `--https-host`); mutually exclusive with `--tls-cert` and `--tls-key`. |
 | `--https-host` | `GHTTP_HTTPS_HOSTS` | Repeatable flag; env uses comma-separated list; only used with `--https` and included in generated HTTPS certificates. |
 | `--tls-cert` | `GHTTP_SERVE_TLS_CERTIFICATE` | Provide with `--tls-key`; cannot combine with `--https`. |
