@@ -44,4 +44,9 @@ Add a `GHTTP_CONFIG_FILE` environment variable counterpart to the `--config` fla
 
 Drop the `ghttp https` CLI subcommands so `--https` is the single self-managed certificate path. Keep internal HTTPS plumbing for automated flow.
 
+### 402: Refresh docker-compose integration doc accuracy
+**Status:** Resolved
+
+Align `docs/docker-compose-ai-agents.md` with the current image name, configuration precedence, config file environment variable, legacy proxy settings, and browse behavior.
+
 ## Planning

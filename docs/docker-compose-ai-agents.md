@@ -10,15 +10,16 @@ The goals are:
 
 ## Quick reference
 
-- Image: `ghcr.io/temirov/ghttp:latest`
+- Image: `ghcr.io/tyemirov/ghttp:latest`
 - Entrypoint: `/app/ghttp`
 - Default listen port: `8000` for HTTP, `8443` when `serve.https` is true
 - Container metadata: `EXPOSE 8000` in the Dockerfile
 - Default serve directory: current working directory (`.` inside `/app`)
-- Configuration sources (highest precedence last):
+- Configuration sources (highest precedence first):
   - CLI flags (e.g. `--directory`, positional `PORT`)
   - Environment variables (`GHTTP_*`)
   - Configuration file in the user config directory (`config.yaml`)
+  - Built-in defaults
 
 For most Compose use cases, prefer environment variables over configuration files. Use CLI flags only when something cannot be expressed via environment variables.
 
@@ -29,7 +30,7 @@ This pattern serves static content from a host directory using HTTP on port `800
 ```yaml
 services:
   ghttp:
-    image: ghcr.io/temirov/ghttp:latest
+    image: ghcr.io/tyemirov/ghttp:latest
     restart: unless-stopped
     ports:
       - "8000:8000"
@@ -52,6 +53,8 @@ Behavior:
 
 The CLI uses Viper with an `env` prefix of `GHTTP` and replaces dots in configuration keys with underscores. The most common configuration keys and their environment variable forms are:
 
+- `config.file` → `GHTTP_CONFIG_FILE`
+  - Path to a specific configuration file (overrides the default lookup in the user config directory).
 - `serve.directory` → `GHTTP_SERVE_DIRECTORY`
   - Directory path inside the container to serve.
   - Default: `"."` (the process working directory).
@@ -69,7 +72,7 @@ The CLI uses Viper with an `env` prefix of `GHTTP` and replaces dots in configur
   - Boolean; when truthy, disables Markdown rendering and serves `.md` files as plain assets.
   - Default: `false`.
 - `serve.browse` → `GHTTP_SERVE_BROWSE`
-  - Boolean; when truthy, enables directory browsing behavior without automatic Markdown rendering.
+  - Boolean; when truthy, folder URLs always return a directory listing even if index.html or README.md exists (direct file requests, including .md, still render normally).
   - Default: `false`.
 - `serve.logging_type` → `GHTTP_SERVE_LOGGING_TYPE`
   - Logging format: `"CONSOLE"` (human-oriented) or `"JSON"` (machine-oriented).
@@ -77,6 +80,12 @@ The CLI uses Viper with an `env` prefix of `GHTTP` and replaces dots in configur
 - `serve.proxies` → `GHTTP_SERVE_PROXIES`
   - Comma-separated list of from=to mappings (for example, `/api=http://backend:8081`).
   - Use multiple entries to proxy multiple path prefixes.
+- `serve.proxy_path_prefix` → `GHTTP_SERVE_PROXY_PATH_PREFIX`
+  - Legacy single mapping (from-path prefix); requires `serve.proxy_backend`.
+  - Only used when `serve.proxies` is empty.
+- `serve.proxy_backend` → `GHTTP_SERVE_PROXY_BACKEND`
+  - Legacy single mapping (to-backend URL); requires `serve.proxy_path_prefix`.
+  - Only used when `serve.proxies` is empty.
 - `serve.tls_certificate` → `GHTTP_SERVE_TLS_CERTIFICATE`
   - Path inside the container to a PEM-encoded TLS certificate.
   - Used together with `GHTTP_SERVE_TLS_PRIVATE_KEY`.
@@ -113,7 +122,7 @@ To set directory and port via CLI flags instead of environment variables:
 ```yaml
 services:
   ghttp:
-    image: ghcr.io/temirov/ghttp:latest
+    image: ghcr.io/tyemirov/ghttp:latest
     ports:
       - "8000:8000"
     volumes:
@@ -141,7 +150,7 @@ When certificates are managed outside the container (for example, by a certifica
 ```yaml
 services:
   ghttp:
-    image: ghcr.io/temirov/ghttp:latest
+    image: ghcr.io/tyemirov/ghttp:latest
     ports:
       - "8443:8443"
     volumes:
