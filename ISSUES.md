@@ -37,6 +37,11 @@ Add a `GHTTP_CONFIG_FILE` environment variable counterpart to the `--config` fla
 
 ## BugFixes (300–399)
 
+### 301: Parse comma-delimited proxy mappings in env
+**Status:** Resolved
+
+Normalize `GHTTP_SERVE_PROXIES` so comma-delimited values are split into individual mappings for the proxy route parser.
+
 ## Maintenance (400–499)
 
 ### 401: Remove manual HTTPS CLI workflow

@@ -13,7 +13,7 @@ import (
 var errInvalidProxyConfiguration = errors.New("proxy.configuration.invalid")
 
 func resolveProxyRoutes(configurationManager *viper.Viper) (server.ProxyRoutes, error) {
-	proxyMappings := configurationManager.GetStringSlice(configKeyServeProxies)
+	proxyMappings := normalizeProxyMappings(configurationManager.GetStringSlice(configKeyServeProxies))
 	legacyBackend := strings.TrimSpace(configurationManager.GetString(configKeyProxyBackend))
 	legacyPathPrefix := strings.TrimSpace(configurationManager.GetString(configKeyProxyPathPrefix))
 
@@ -40,4 +40,29 @@ func resolveProxyRoutes(configurationManager *viper.Viper) (server.ProxyRoutes, 
 		return server.ProxyRoutes{}, fmt.Errorf("parse legacy proxy mapping: %w", proxyErr)
 	}
 	return proxyRoutes, nil
+}
+
+func normalizeProxyMappings(proxyMappings []string) []string {
+	if len(proxyMappings) == 0 {
+		return proxyMappings
+	}
+	normalized := make([]string, 0, len(proxyMappings))
+	for _, mapping := range proxyMappings {
+		trimmedMapping := strings.TrimSpace(mapping)
+		if trimmedMapping == "" {
+			continue
+		}
+		if strings.Contains(trimmedMapping, ",") {
+			segments := strings.Split(trimmedMapping, ",")
+			for _, segment := range segments {
+				trimmedSegment := strings.TrimSpace(segment)
+				if trimmedSegment != "" {
+					normalized = append(normalized, trimmedSegment)
+				}
+			}
+			continue
+		}
+		normalized = append(normalized, trimmedMapping)
+	}
+	return normalized
 }
