@@ -221,10 +221,7 @@ func loadConfigurationFile(cmd *cobra.Command) error {
 		return err
 	}
 	configurationManager := resources.configurationManager
-	configFilePath, flagErr := cmd.Flags().GetString(flagNameConfigFile)
-	if flagErr != nil {
-		return fmt.Errorf("read config flag: %w", flagErr)
-	}
+	configFilePath := strings.TrimSpace(configurationManager.GetString(configKeyConfigFile))
 	if configFilePath != "" {
 		configurationManager.SetConfigFile(configFilePath)
 	} else {
