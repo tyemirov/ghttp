@@ -91,8 +91,6 @@ The CLI uses Viper with an `env` prefix of `GHTTP` and replaces dots in configur
 - `https.hosts` → `GHTTP_HTTPS_HOSTS`
   - Comma-separated list of hostnames/IPs included in the dynamic HTTPS certificate.
   - Defaults include `localhost`, `127.0.0.1`, and `::1`.
-- `https.port` → `GHTTP_HTTPS_PORT`
-  - Default HTTPS port used when running `ghttp https serve`.
 
 Additional directory listing control:
 

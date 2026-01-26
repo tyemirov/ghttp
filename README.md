@@ -51,15 +51,13 @@ After installation the `ghttp` binary is placed in `$GOBIN` (or `$GOPATH/bin`). 
 | Serve a specific directory on a chosen port | `ghttp --directory /srv/www 9000` | Exposes `/srv/www` at <http://localhost:9000>. |
 | Bind to a specific interface | `ghttp --bind 192.168.1.5 8080` | Restricts listening to the provided IP address. |
 | Serve HTTPS with an existing certificate | `ghttp --tls-cert cert.pem --tls-key key.pem 8443` | Keeps backwards-compatible manual TLS support. |
-| Provision and trust the development root CA | `ghttp https setup` | Generates `~/.config/ghttp/certs/ca.pem` and installs it into the OS trust store (may require elevated privileges). |
 | Serve HTTPS with self-signed certificates | `ghttp --https 8443` | Installs the development CA, serves HTTPS, and removes credentials on exit. |
 | Disable Markdown rendering | `ghttp --no-md` | Serves raw Markdown assets without HTML conversion. |
 | Switch logging format | `ghttp --logging-type JSON` | Emits structured JSON logs instead of the default console view. |
-| Remove the development certificates | `ghttp https uninstall` | Deletes local key material and removes the CA from the OS trust store. |
 
 ### Key capabilities
 * Choose between HTTP/1.0 and HTTP/1.1 with `--protocol`/`-p`; the server tunes keep-alive behaviour automatically.
-* Provision a development certificate authority with `ghttp --https` (or `ghttp https setup` for manual control), storing it at `~/.config/ghttp/certs` and installing it into macOS, Linux, or Windows trust stores using native tooling.
+* Provision a development certificate authority with `ghttp --https`, storing it at `~/.config/ghttp/certs` and installing it into macOS, Linux, or Windows trust stores using native tooling.
 * Issue SAN-aware leaf certificates on demand whenever HTTPS is enabled, covering `localhost`, `127.0.0.1`, `::1`, and additional hosts supplied via repeated `--https-host` flags or Viper configuration.
 * Render Markdown files (`*.md`) to HTML automatically, treat `README.md` as a directory landing page, and skip the feature entirely with `--no-md` or `serve.no_markdown: true` in configuration.
 * When Firefox is installed, automatically configure its profiles to trust the generated certificates so browser warnings disappear on the next restart.
@@ -81,13 +79,12 @@ Flags map to Viper configuration keys. Environment variables use the `GHTTP_` pr
 | `--proxy` | `GHTTP_SERVE_PROXIES` | Repeatable from=to mapping (for example, `/api=http://backend:8081`); backend can be `http://` or `https://` regardless of frontend scheme; env uses comma-separated list. |
 | `--https` | `GHTTP_SERVE_HTTPS` | Enables self-signed HTTPS using the development certificate authority (SANs from `--https-host`); mutually exclusive with `--tls-cert` and `--tls-key`. |
 | `--https-host` | `GHTTP_HTTPS_HOSTS` | Repeatable flag; env uses comma-separated list; only used with `--https` and included in generated HTTPS certificates. |
-| `--https-cert-dir` | `GHTTP_HTTPS_CERTIFICATE_DIRECTORY` | Controls where generated certificates are stored. |
 | `--tls-cert` | `GHTTP_SERVE_TLS_CERTIFICATE` | Provide with `--tls-key`; cannot combine with `--https`. |
 | `--tls-key` | `GHTTP_SERVE_TLS_PRIVATE_KEY` | Provide with `--tls-cert`; cannot combine with `--https`. |
 
 Legacy single mapping: `--proxy-path` (from) + `--proxy-backend` (to) remain supported when `--proxy`/`GHTTP_SERVE_PROXIES` are unset.
 
-Positional port arguments map to `GHTTP_SERVE_PORT` for `ghttp` and `GHTTP_HTTPS_PORT` for `ghttp https serve`.
+Positional port arguments map to `GHTTP_SERVE_PORT` for `ghttp`.
 
 
 ### Browser trust behaviour

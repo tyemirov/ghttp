@@ -7,7 +7,6 @@ import (
 	"testing"
 
 	"github.com/spf13/cobra"
-	"github.com/spf13/pflag"
 	"github.com/spf13/viper"
 
 	"github.com/tyemirov/ghttp/pkg/logging"
@@ -89,75 +88,5 @@ func TestPrepareHTTPSContext(testingInstance *testing.T) {
 				testingInstance.Fatalf("expected certificate directory %s, got %s", absoluteCertificateDirectory, certificateDirectoryPath)
 			}
 		})
-	}
-}
-
-func TestHTTPSCommandCertificateDirectoryFlagRegistration(testingInstance *testing.T) {
-	testCases := []struct {
-		name          string
-		flagName      string
-		expectPresent bool
-	}{
-		{
-			name:          "new flag present",
-			flagName:      flagNameCertificateDir,
-			expectPresent: true,
-		},
-		{
-			name:          "old flag absent",
-			flagName:      "cert-dir",
-			expectPresent: false,
-		},
-	}
-
-	for _, testCase := range testCases {
-		testingInstance.Run(testCase.name, func(testingInstance *testing.T) {
-			configurationManager := viper.New()
-			resources := &applicationResources{
-				configurationManager: configurationManager,
-				loggingService:       logging.NewTestService(logging.TypeConsole),
-				defaultConfigDirPath: testingInstance.TempDir(),
-			}
-
-			serveFlags := pflag.NewFlagSet("serve", pflag.ContinueOnError)
-			configureServeFlags(serveFlags, resources.configurationManager)
-			httpsOptionFlags := pflag.NewFlagSet("serve-https-options", pflag.ContinueOnError)
-			configureServeHTTPSOptions(httpsOptionFlags, resources.configurationManager)
-
-			httpsCommand := newHTTPSCommand(resources, serveFlags, httpsOptionFlags)
-			lookupResult := httpsCommand.PersistentFlags().Lookup(testCase.flagName)
-			if testCase.expectPresent && lookupResult == nil {
-				testingInstance.Fatalf("expected flag %s to be registered", testCase.flagName)
-			}
-			if !testCase.expectPresent && lookupResult != nil {
-				testingInstance.Fatalf("expected flag %s to be absent", testCase.flagName)
-			}
-		})
-	}
-}
-
-func TestHTTPSCommandBindsCertificateDirectoryFlag(testingInstance *testing.T) {
-	configurationManager := viper.New()
-	resources := &applicationResources{
-		configurationManager: configurationManager,
-		loggingService:       logging.NewTestService(logging.TypeConsole),
-		defaultConfigDirPath: testingInstance.TempDir(),
-	}
-
-	serveFlags := pflag.NewFlagSet("serve", pflag.ContinueOnError)
-	configureServeFlags(serveFlags, resources.configurationManager)
-	httpsOptionFlags := pflag.NewFlagSet("serve-https-options", pflag.ContinueOnError)
-	configureServeHTTPSOptions(httpsOptionFlags, resources.configurationManager)
-
-	httpsCommand := newHTTPSCommand(resources, serveFlags, httpsOptionFlags)
-	desiredCertificateDirectory := testingInstance.TempDir()
-	parseErr := httpsCommand.ParseFlags([]string{"--" + flagNameCertificateDir, desiredCertificateDirectory})
-	if parseErr != nil {
-		testingInstance.Fatalf("parse flags: %v", parseErr)
-	}
-
-	configuredCertificateDirectory := configurationManager.GetString(configKeyHTTPSCertificateDir)
-	if configuredCertificateDirectory != desiredCertificateDirectory {
-		testingInstance.Fatalf("expected certificate directory %s, got %s", desiredCertificateDirectory, configuredCertificateDirectory)
 	}
 }
