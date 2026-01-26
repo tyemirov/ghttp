@@ -18,7 +18,7 @@ type contextKey string
 const (
 	contextKeyApplicationResources contextKey = "application-resources"
 	contextKeyServeConfiguration   contextKey = "serve-configuration"
-	contextKeyHTTPSHosts           contextKey = "https-hosts"
+	contextKeyHTTPSHosts           contextKey = "https-host"
 	contextKeyHTTPSCertificateDir  contextKey = "https-certificate-directory"
 
 	defaultServePort       = "8000"
@@ -38,8 +38,8 @@ const (
 	flagNameHTTPS              = "https"
 	flagNameBrowse             = "browse"
 	flagNameLoggingType        = "logging-type"
-	flagNameCertificateDir     = "cert-dir"
-	flagNameHTTPSHosts         = "host"
+	flagNameCertificateDir     = "https-cert-dir"
+	flagNameHTTPSHosts         = "https-host"
 	flagNameProxyBackend       = "proxy-backend"
 	flagNameProxyPathPrefix    = "proxy-path"
 

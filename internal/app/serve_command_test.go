@@ -187,3 +187,67 @@ func TestPrepareServeConfigurationAcceptsInitialFileArgument(t *testing.T) {
 		t.Fatalf("expected default port %s, got %s", defaultServePort, serveConfiguration.Port)
 	}
 }
+
+func TestPrepareServeConfigurationSetsEnableDynamicHTTPS(testingInstance *testing.T) {
+	testCases := []struct {
+		name               string
+		enableDynamicHTTPS bool
+		allowTLSFiles      bool
+		expectedValue      bool
+	}{
+		{
+			name:               "enabled with tls allowed",
+			enableDynamicHTTPS: true,
+			allowTLSFiles:      true,
+			expectedValue:      true,
+		},
+		{
+			name:               "disabled with tls allowed",
+			enableDynamicHTTPS: false,
+			allowTLSFiles:      true,
+			expectedValue:      false,
+		},
+		{
+			name:               "disabled when tls files disallowed",
+			enableDynamicHTTPS: true,
+			allowTLSFiles:      false,
+			expectedValue:      false,
+		},
+	}
+
+	for _, testCase := range testCases {
+		testingInstance.Run(testCase.name, func(testingInstance *testing.T) {
+			temporaryDirectory := testingInstance.TempDir()
+			configurationManager := viper.New()
+			configurationManager.Set(configKeyServeBindAddress, "")
+			configurationManager.Set(configKeyServeDirectory, temporaryDirectory)
+			configurationManager.Set(configKeyServeProtocol, "HTTP/1.1")
+			configurationManager.Set(configKeyServePort, "8000")
+			configurationManager.Set(configKeyServeLoggingType, logging.TypeConsole)
+			configurationManager.Set(configKeyServeHTTPS, testCase.enableDynamicHTTPS)
+
+			resources := &applicationResources{
+				configurationManager: configurationManager,
+				loggingService:       logging.NewTestService(logging.TypeConsole),
+				defaultConfigDirPath: temporaryDirectory,
+			}
+
+			command := &cobra.Command{}
+			command.SetContext(context.WithValue(context.Background(), contextKeyApplicationResources, resources))
+
+			err := prepareServeConfiguration(command, nil, configKeyServePort, testCase.allowTLSFiles)
+			if err != nil {
+				testingInstance.Fatalf("prepare serve configuration: %v", err)
+			}
+
+			configurationValue := command.Context().Value(contextKeyServeConfiguration)
+			serveConfiguration, ok := configurationValue.(ServeConfiguration)
+			if !ok {
+				testingInstance.Fatalf("serve configuration stored with unexpected type")
+			}
+			if serveConfiguration.EnableDynamicHTTPS != testCase.expectedValue {
+				testingInstance.Fatalf("expected EnableDynamicHTTPS=%t, got %t", testCase.expectedValue, serveConfiguration.EnableDynamicHTTPS)
+			}
+		})
+	}
+}

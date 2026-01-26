@@ -67,7 +67,7 @@ func configureServeFlags(flagSet *pflag.FlagSet, configurationManager *viper.Vip
 
 func configureServeHTTPSOptions(flagSet *pflag.FlagSet, configurationManager *viper.Viper) {
 	flagSet.Bool(flagNameHTTPS, configurationManager.GetBool(configKeyServeHTTPS), "Serve over HTTPS using a self-signed certificate")
-	flagSet.StringSlice(flagNameHTTPSHosts, configurationManager.GetStringSlice(configKeyHTTPSHosts), "Hostnames or IP addresses for automatic HTTPS certificates")
+	flagSet.StringSlice(flagNameHTTPSHosts, configurationManager.GetStringSlice(configKeyHTTPSHosts), "Hostnames or IP addresses included in generated HTTPS certificates (only used with --https)")
 	_ = configurationManager.BindPFlag(configKeyServeHTTPS, flagSet.Lookup(flagNameHTTPS))
 	_ = configurationManager.BindPFlag(configKeyHTTPSHosts, flagSet.Lookup(flagNameHTTPSHosts))
 }

@@ -26,7 +26,7 @@ func TestNewRootCommandProvidesHTTPSFlagOnce(t *testing.T) {
 
 	rootCommand := newRootCommand(resources)
 	if rootCommand.Flags().Lookup(flagNameHTTPSHosts) == nil {
-		t.Fatalf("expected host flag to be registered")
+		t.Fatalf("expected https-host flag to be registered")
 	}
 
 	httpsResources := &applicationResources{
