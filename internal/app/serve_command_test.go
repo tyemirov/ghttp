@@ -188,6 +188,39 @@ func TestPrepareServeConfigurationAcceptsInitialFileArgument(t *testing.T) {
 	}
 }
 
+func TestPrepareServeConfigurationDefaultsToHTTPSPortWhenEnabled(t *testing.T) {
+	temporaryDirectory := t.TempDir()
+	configurationManager := viper.New()
+	configurationManager.Set(configKeyServeBindAddress, "")
+	configurationManager.Set(configKeyServeDirectory, temporaryDirectory)
+	configurationManager.Set(configKeyServeProtocol, "HTTP/1.1")
+	configurationManager.Set(configKeyServeLoggingType, logging.TypeConsole)
+	configurationManager.Set(configKeyServeHTTPS, true)
+
+	resources := &applicationResources{
+		configurationManager: configurationManager,
+		loggingService:       logging.NewTestService(logging.TypeConsole),
+		defaultConfigDirPath: temporaryDirectory,
+	}
+
+	command := &cobra.Command{}
+	command.SetContext(context.WithValue(context.Background(), contextKeyApplicationResources, resources))
+
+	err := prepareServeConfiguration(command, nil, configKeyServePort, true)
+	if err != nil {
+		t.Fatalf("prepare serve configuration: %v", err)
+	}
+
+	configurationValue := command.Context().Value(contextKeyServeConfiguration)
+	serveConfiguration, ok := configurationValue.(ServeConfiguration)
+	if !ok {
+		t.Fatalf("serve configuration stored with unexpected type")
+	}
+	if serveConfiguration.Port != defaultHTTPSServePort {
+		t.Fatalf("expected default https port %s, got %s", defaultHTTPSServePort, serveConfiguration.Port)
+	}
+}
+
 func TestPrepareServeConfigurationSetsEnableDynamicHTTPS(testingInstance *testing.T) {
 	testCases := []struct {
 		name               string

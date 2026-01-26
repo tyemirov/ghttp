@@ -22,6 +22,7 @@ const (
 	contextKeyHTTPSCertificateDir  contextKey = "https-certificate-directory"
 
 	defaultServePort       = "8000"
+	defaultHTTPSServePort  = "8443"
 	defaultProtocolVersion = "HTTP/1.1"
 	defaultConfigFileName  = "config"
 	defaultConfigFileType  = "yaml"
@@ -118,7 +119,6 @@ func Execute(ctx context.Context, arguments []string) int {
 	configurationManager.SetDefault(configKeyServeBindAddress, "")
 	configurationManager.SetDefault(configKeyServeDirectory, ".")
 	configurationManager.SetDefault(configKeyServeProtocol, defaultProtocolVersion)
-	configurationManager.SetDefault(configKeyServePort, defaultServePort)
 	configurationManager.SetDefault(configKeyServeTLSCertificatePath, "")
 	configurationManager.SetDefault(configKeyServeTLSKeyPath, "")
 	configurationManager.SetDefault(configKeyServeNoMarkdown, false)

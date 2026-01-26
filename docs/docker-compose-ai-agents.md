@@ -12,7 +12,7 @@ The goals are:
 
 - Image: `ghcr.io/temirov/ghttp:latest`
 - Entrypoint: `/app/ghttp`
-- Default listen port: `8000` (overridable)
+- Default listen port: `8000` for HTTP, `8443` when `serve.https` is true
 - Container metadata: `EXPOSE 8080` in the Dockerfile
 - Default serve directory: current working directory (`.` inside `/app`)
 - Configuration sources (highest precedence last):
@@ -57,7 +57,7 @@ The CLI uses Viper with an `env` prefix of `GHTTP` and replaces dots in configur
   - Default: `"."` (the process working directory).
 - `serve.port` → `GHTTP_SERVE_PORT`
   - TCP port that gHTTP listens on inside the container.
-  - Default: `"8000"`.
+  - Default: `"8000"` for HTTP, `"8443"` when `serve.https` is true and no port is provided.
 - `serve.bind_address` → `GHTTP_SERVE_BIND_ADDRESS`
   - Bind address for the HTTP listener.
   - Default: `""` (equivalent to all interfaces).

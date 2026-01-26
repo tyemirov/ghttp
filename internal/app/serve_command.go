@@ -78,6 +78,10 @@ func prepareServeConfiguration(cmd *cobra.Command, args []string, portConfigKey 
 			}
 		}
 	}
+	enableDynamicHTTPS := configurationManager.GetBool(configKeyServeHTTPS)
+	if !allowTLSFiles {
+		enableDynamicHTTPS = false
+	}
 	absoluteDirectory, absoluteErr := filepath.Abs(directoryPath)
 	if absoluteErr != nil {
 		return fmt.Errorf("resolve directory path: %w", absoluteErr)
@@ -96,7 +100,11 @@ func prepareServeConfiguration(cmd *cobra.Command, args []string, portConfigKey 
 	}
 
 	if portValue == "" {
-		portValue = defaultServePort
+		if enableDynamicHTTPS {
+			portValue = defaultHTTPSServePort
+		} else {
+			portValue = defaultServePort
+		}
 	}
 	portNumber, portErr := strconv.Atoi(portValue)
 	if portErr != nil || portNumber <= 0 || portNumber > 65535 {
@@ -107,13 +115,9 @@ func prepareServeConfiguration(cmd *cobra.Command, args []string, portConfigKey 
 	tlsKeyPath := strings.TrimSpace(configurationManager.GetString(configKeyServeTLSKeyPath))
 	markdownDisabled := configurationManager.GetBool(configKeyServeNoMarkdown)
 	browseDirectories := configurationManager.GetBool(configKeyServeBrowse)
-	enableDynamicHTTPS := configurationManager.GetBool(configKeyServeHTTPS)
 	loggingTypeValue, normalizeErr := logging.NormalizeType(configurationManager.GetString(configKeyServeLoggingType))
 	if normalizeErr != nil {
 		return normalizeErr
-	}
-	if !allowTLSFiles {
-		enableDynamicHTTPS = false
 	}
 	if !allowTLSFiles {
 		if tlsCertificatePath != "" || tlsKeyPath != "" {
