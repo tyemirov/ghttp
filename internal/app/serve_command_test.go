@@ -251,3 +251,105 @@ func TestPrepareServeConfigurationSetsEnableDynamicHTTPS(testingInstance *testin
 		})
 	}
 }
+
+func TestPrepareServeConfigurationResolvesProxyRoutes(testingInstance *testing.T) {
+	testCases := []struct {
+		name               string
+		proxyMappings      []string
+		legacyBackend      string
+		legacyPathPrefix   string
+		expectedRouteCount int
+		expectError        bool
+	}{
+		{
+			name:               "no proxy configuration",
+			expectedRouteCount: 0,
+			expectError:        false,
+		},
+		{
+			name:               "proxy mappings",
+			proxyMappings:      []string{"/api=http://backend:8081", "/ws=http://backend:8082"},
+			expectedRouteCount: 2,
+			expectError:        false,
+		},
+		{
+			name:               "legacy proxy configuration",
+			legacyBackend:      "http://backend:8081",
+			legacyPathPrefix:   "/api",
+			expectedRouteCount: 1,
+			expectError:        false,
+		},
+		{
+			name:             "conflicting proxy configuration",
+			proxyMappings:    []string{"/api=http://backend:8081"},
+			legacyBackend:    "http://backend:8082",
+			legacyPathPrefix: "/api",
+			expectError:      true,
+		},
+		{
+			name:             "legacy backend missing",
+			legacyPathPrefix: "/api",
+			expectError:      true,
+		},
+		{
+			name:          "legacy path prefix missing",
+			legacyBackend: "http://backend:8081",
+			expectError:   true,
+		},
+		{
+			name:          "invalid proxy mapping",
+			proxyMappings: []string{"/api=http://"},
+			expectError:   true,
+		},
+	}
+
+	for _, testCase := range testCases {
+		testingInstance.Run(testCase.name, func(testingInstance *testing.T) {
+			temporaryDirectory := testingInstance.TempDir()
+			configurationManager := viper.New()
+			configurationManager.Set(configKeyServeBindAddress, "")
+			configurationManager.Set(configKeyServeDirectory, temporaryDirectory)
+			configurationManager.Set(configKeyServeProtocol, "HTTP/1.1")
+			configurationManager.Set(configKeyServePort, "8000")
+			configurationManager.Set(configKeyServeLoggingType, logging.TypeConsole)
+			if testCase.proxyMappings != nil {
+				configurationManager.Set(configKeyServeProxies, testCase.proxyMappings)
+			}
+			if testCase.legacyBackend != "" {
+				configurationManager.Set(configKeyProxyBackend, testCase.legacyBackend)
+			}
+			if testCase.legacyPathPrefix != "" {
+				configurationManager.Set(configKeyProxyPathPrefix, testCase.legacyPathPrefix)
+			}
+
+			resources := &applicationResources{
+				configurationManager: configurationManager,
+				loggingService:       logging.NewTestService(logging.TypeConsole),
+				defaultConfigDirPath: temporaryDirectory,
+			}
+
+			command := &cobra.Command{}
+			command.SetContext(context.WithValue(context.Background(), contextKeyApplicationResources, resources))
+
+			err := prepareServeConfiguration(command, nil, configKeyServePort, true)
+			if testCase.expectError {
+				if err == nil {
+					testingInstance.Fatalf("expected error")
+				}
+				return
+			}
+			if err != nil {
+				testingInstance.Fatalf("prepare serve configuration: %v", err)
+			}
+
+			configurationValue := command.Context().Value(contextKeyServeConfiguration)
+			serveConfiguration, ok := configurationValue.(ServeConfiguration)
+			if !ok {
+				testingInstance.Fatalf("serve configuration stored with unexpected type")
+			}
+			if serveConfiguration.ProxyRoutes.Count() != testCase.expectedRouteCount {
+				testingInstance.Fatalf("expected %d proxy routes, got %d", testCase.expectedRouteCount, serveConfiguration.ProxyRoutes.Count())
+			}
+		})
+	}
+}

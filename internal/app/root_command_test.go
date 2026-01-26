@@ -45,6 +45,20 @@ func TestNewRootCommandProvidesHTTPSFlagOnce(t *testing.T) {
 	}
 }
 
+func TestNewRootCommandProvidesProxyFlag(testingInstance *testing.T) {
+	configurationManager := viper.New()
+	resources := &applicationResources{
+		configurationManager: configurationManager,
+		loggingService:       logging.NewTestService(logging.TypeConsole),
+		defaultConfigDirPath: testingInstance.TempDir(),
+	}
+
+	rootCommand := newRootCommand(resources)
+	if rootCommand.Flags().Lookup(flagNameProxy) == nil {
+		testingInstance.Fatalf("expected proxy flag to be registered")
+	}
+}
+
 func TestRootCommandBindsBrowseFlag(t *testing.T) {
 	configurationManager := viper.New()
 	resources := &applicationResources{

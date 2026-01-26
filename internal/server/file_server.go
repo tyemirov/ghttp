@@ -58,8 +58,7 @@ type FileServerConfiguration struct {
 	InitialFileRelativePath string
 	LoggingType             string
 	TLS                     *TLSConfiguration
-	ProxyBackendURL         string
-	ProxyPathPrefix         string
+	ProxyRoutes             ProxyRoutes
 }
 
 // TLSConfiguration describes transport layer security configuration.
@@ -189,13 +188,8 @@ func (fileServer FileServer) buildFileHandler(configuration FileServerConfigurat
 	if configuration.InitialFileRelativePath != "" && !configuration.BrowseDirectories {
 		handler = newInitialFileHandler(handler, configuration.InitialFileRelativePath)
 	}
-	if configuration.ProxyBackendURL != "" && configuration.ProxyPathPrefix != "" {
-		proxyHandler, err := newProxyHandler(handler, configuration.ProxyBackendURL, configuration.ProxyPathPrefix)
-		if err != nil {
-			fileServer.loggingService.Error("failed to create proxy handler", err)
-		} else {
-			handler = proxyHandler
-		}
+	if !configuration.ProxyRoutes.IsEmpty() {
+		handler = newProxyHandler(handler, configuration.ProxyRoutes)
 	}
 	return handler
 }

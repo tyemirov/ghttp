@@ -78,13 +78,14 @@ Flags map to Viper configuration keys. Environment variables use the `GHTTP_` pr
 | `--no-md` | `GHTTP_SERVE_NO_MARKDOWN` | Disables Markdown rendering. |
 | `--browse` | `GHTTP_SERVE_BROWSE` | Overrides `GHTTPD_DISABLE_DIR_INDEX`. |
 | `--logging-type` | `GHTTP_SERVE_LOGGING_TYPE` | CONSOLE or JSON. |
-| `--proxy-backend` | `GHTTP_SERVE_PROXY_BACKEND` | Requires `--proxy-path`. |
-| `--proxy-path` | `GHTTP_SERVE_PROXY_PATH_PREFIX` | Requires `--proxy-backend`. |
+| `--proxy` | `GHTTP_SERVE_PROXIES` | Repeatable from=to mapping (for example, `/api=http://backend:8081`); backend can be `http://` or `https://` regardless of frontend scheme; env uses comma-separated list. |
 | `--https` | `GHTTP_SERVE_HTTPS` | Enables self-signed HTTPS using the development certificate authority (SANs from `--https-host`); mutually exclusive with `--tls-cert` and `--tls-key`. |
 | `--https-host` | `GHTTP_HTTPS_HOSTS` | Repeatable flag; env uses comma-separated list; only used with `--https` and included in generated HTTPS certificates. |
 | `--https-cert-dir` | `GHTTP_HTTPS_CERTIFICATE_DIRECTORY` | Controls where generated certificates are stored. |
 | `--tls-cert` | `GHTTP_SERVE_TLS_CERTIFICATE` | Provide with `--tls-key`; cannot combine with `--https`. |
 | `--tls-key` | `GHTTP_SERVE_TLS_PRIVATE_KEY` | Provide with `--tls-cert`; cannot combine with `--https`. |
+
+Legacy single mapping: `--proxy-path` (from) + `--proxy-backend` (to) remain supported when `--proxy`/`GHTTP_SERVE_PROXIES` are unset.
 
 Positional port arguments map to `GHTTP_SERVE_PORT` for `ghttp` and `GHTTP_HTTPS_PORT` for `ghttp https serve`.
 

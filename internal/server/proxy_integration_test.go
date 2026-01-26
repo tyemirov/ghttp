@@ -140,44 +140,55 @@ func TestIntegrationProxyReturns502OnBackendError(t *testing.T) {
 	}
 }
 
-func TestIntegrationProxyRejectsInvalidURLs(t *testing.T) {
-	tests := []struct {
-		name        string
-		backendURL  string
-		expectError bool
-	}{
-		{"valid http", "http://localhost:8080", false},
-		{"valid https", "https://backend.example.com:443", false},
-		{"valid with path", "http://backend:8001/api", false},
-		{"double http scheme", "http://http://localhost:8080", true},
-		{"missing scheme", "localhost:8080", true},
-		{"ftp scheme", "ftp://localhost:8080", true},
-		{"empty host", "http://", true},
-		{"just scheme", "http:", true},
+func TestIntegrationProxyPrefersMostSpecificPrefix(t *testing.T) {
+	backendPrimary := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("X-Backend", "primary")
+		w.WriteHeader(http.StatusOK)
+	}))
+	defer backendPrimary.Close()
+
+	backendSecondary := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("X-Backend", "secondary")
+		w.WriteHeader(http.StatusOK)
+	}))
+	defer backendSecondary.Close()
+
+	proxyRoutes, routeErr := NewProxyRoutes([]string{
+		"/api=" + backendPrimary.URL,
+		"/api/internal=" + backendSecondary.URL,
+	})
+	if routeErr != nil {
+		t.Fatalf("proxy routes: %v", routeErr)
 	}
 
-	for _, tc := range tests {
-		t.Run(tc.name, func(t *testing.T) {
-			tempDir := t.TempDir()
-			fileServer := NewFileServer(logging.NewTestService(logging.TypeJSON), serverdetails.NewServingAddressFormatter())
-			config := FileServerConfiguration{
-				DirectoryPath:   tempDir,
-				ProxyBackendURL: tc.backendURL,
-				ProxyPathPrefix: "/api/",
-				LoggingType:     logging.TypeJSON,
-			}
-			handler := fileServer.FullHandler(config)
-			// If the URL is invalid, the proxy won't be set up and requests will fall through
-			// We test this by making a request and checking if it reaches a backend or not
-			if !tc.expectError {
-				// Valid URL - handler should be created without panic
-				if handler == nil {
-					t.Error("expected handler to be created")
-				}
-			}
-			// For invalid URLs, the proxy silently fails to initialize and logs an error
-			// This is the current behavior - requests fall through to file server
-		})
+	tempDir := t.TempDir()
+	fileServer := NewFileServer(logging.NewTestService(logging.TypeJSON), serverdetails.NewServingAddressFormatter())
+	config := FileServerConfiguration{
+		DirectoryPath: tempDir,
+		ProxyRoutes:   proxyRoutes,
+		LoggingType:   logging.TypeJSON,
+	}
+	handler := fileServer.FullHandler(config)
+
+	proxyServer := httptest.NewServer(handler)
+	defer proxyServer.Close()
+
+	primaryResponse, primaryErr := http.Get(proxyServer.URL + "/api/status")
+	if primaryErr != nil {
+		t.Fatalf("primary request failed: %v", primaryErr)
+	}
+	primaryResponse.Body.Close()
+	if primaryResponse.Header.Get("X-Backend") != "primary" {
+		t.Errorf("expected primary backend, got %s", primaryResponse.Header.Get("X-Backend"))
+	}
+
+	secondaryResponse, secondaryErr := http.Get(proxyServer.URL + "/api/internal/status")
+	if secondaryErr != nil {
+		t.Fatalf("secondary request failed: %v", secondaryErr)
+	}
+	secondaryResponse.Body.Close()
+	if secondaryResponse.Header.Get("X-Backend") != "secondary" {
+		t.Errorf("expected secondary backend, got %s", secondaryResponse.Header.Get("X-Backend"))
 	}
 }
 
@@ -258,11 +269,14 @@ func TestIntegrationProxyWebSocketWithLoggingMiddleware(t *testing.T) {
 	// Create handler with JSON logging (uses statusRecorder wrapper)
 	tempDir := t.TempDir()
 	fileServer := NewFileServer(logging.NewTestService(logging.TypeJSON), serverdetails.NewServingAddressFormatter())
+	proxyRoutes, routeErr := NewProxyRoutesFromLegacy("/api/", backend.URL)
+	if routeErr != nil {
+		t.Fatalf("proxy routes: %v", routeErr)
+	}
 	config := FileServerConfiguration{
-		DirectoryPath:   tempDir,
-		ProxyBackendURL: backend.URL,
-		ProxyPathPrefix: "/api/",
-		LoggingType:     logging.TypeJSON,
+		DirectoryPath: tempDir,
+		ProxyRoutes:   proxyRoutes,
+		LoggingType:   logging.TypeJSON,
 	}
 	handler := fileServer.FullHandler(config)
 
@@ -298,6 +312,42 @@ func TestIntegrationProxyWebSocketWithLoggingMiddleware(t *testing.T) {
 	}
 }
 
+func TestIntegrationProxyWebSocketBackendUnavailable(t *testing.T) {
+	proxyRoutes, routeErr := NewProxyRoutes([]string{"/api=http://127.0.0.1:1"})
+	if routeErr != nil {
+		t.Fatalf("proxy routes: %v", routeErr)
+	}
+
+	tempDir := t.TempDir()
+	fileServer := NewFileServer(logging.NewTestService(logging.TypeJSON), serverdetails.NewServingAddressFormatter())
+	config := FileServerConfiguration{
+		DirectoryPath: tempDir,
+		ProxyRoutes:   proxyRoutes,
+		LoggingType:   logging.TypeJSON,
+	}
+	handler := fileServer.FullHandler(config)
+
+	proxy := httptest.NewServer(handler)
+	defer proxy.Close()
+
+	request, requestErr := http.NewRequest(http.MethodGet, proxy.URL+"/api/ws", nil)
+	if requestErr != nil {
+		t.Fatalf("request: %v", requestErr)
+	}
+	request.Header.Set(headerConnection, "Upgrade")
+	request.Header.Set(headerUpgrade, valueWebSocket)
+
+	response, responseErr := http.DefaultClient.Do(request)
+	if responseErr != nil {
+		t.Fatalf("request failed: %v", responseErr)
+	}
+	response.Body.Close()
+
+	if response.StatusCode != http.StatusBadGateway {
+		t.Fatalf("expected status %d, got %d", http.StatusBadGateway, response.StatusCode)
+	}
+}
+
 // Helper functions
 
 func newTestProxyHandler(t *testing.T, backendURL, pathPrefix string) http.Handler {
@@ -308,12 +358,15 @@ func newTestProxyHandler(t *testing.T, backendURL, pathPrefix string) http.Handl
 
 func newTestProxyHandlerWithDir(t *testing.T, dir, backendURL, pathPrefix string) http.Handler {
 	t.Helper()
+	proxyRoutes, routeErr := NewProxyRoutesFromLegacy(pathPrefix, backendURL)
+	if routeErr != nil {
+		t.Fatalf("proxy routes: %v", routeErr)
+	}
 	fileServer := NewFileServer(logging.NewTestService(logging.TypeJSON), serverdetails.NewServingAddressFormatter())
 	config := FileServerConfiguration{
-		DirectoryPath:   dir,
-		ProxyBackendURL: backendURL,
-		ProxyPathPrefix: pathPrefix,
-		LoggingType:     logging.TypeJSON,
+		DirectoryPath: dir,
+		ProxyRoutes:   proxyRoutes,
+		LoggingType:   logging.TypeJSON,
 	}
 	return fileServer.FullHandler(config)
 }
