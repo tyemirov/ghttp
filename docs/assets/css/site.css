@@ -491,11 +491,35 @@ h2 {
 
 .detailsSummary {
   cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
   padding: 16px 18px;
   font-family: var(--font-display);
   font-weight: 750;
   letter-spacing: -0.03em;
   list-style: none;
+}
+
+.detailsSummary::after {
+  content: "▾";
+  font-size: 1.1rem;
+  line-height: 1;
+  color: rgba(7, 19, 26, 0.56);
+  transition: transform 140ms ease;
+}
+
+.detailsCard:not([open]) .detailsSummary::after {
+  transform: rotate(-90deg);
+}
+
+.detailsSummary:hover {
+  background: rgba(7, 19, 26, 0.04);
+}
+
+.detailsCard[open] .detailsSummary {
+  border-bottom: 1px solid rgba(7, 19, 26, 0.08);
 }
 
 .detailsSummary::-webkit-details-marker {
@@ -694,4 +718,3 @@ h2 {
     transition: none;
   }
 }
-
