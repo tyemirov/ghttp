@@ -13,7 +13,61 @@ env:
   default_platforms: linux/amd64,linux/arm64
 
 jobs:
+  detect-changes:
+    runs-on: ubuntu-latest
+    outputs:
+      should_build: ${{ steps.changes.outputs.should_build }}
+      reason: ${{ steps.changes.outputs.reason }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Decide if Docker image build is needed
+        id: changes
+        shell: bash
+        env:
+          BEFORE_SHA: ${{ github.event.before }}
+          AFTER_SHA: ${{ github.sha }}
+        run: |
+          set -euo pipefail
+
+          if [[ "${GITHUB_EVENT_NAME}" == "workflow_dispatch" ]]; then
+            echo "should_build=true" >> "${GITHUB_OUTPUT}"
+            echo "reason=manual" >> "${GITHUB_OUTPUT}"
+            exit 0
+          fi
+
+          if [[ "${GITHUB_REF}" == refs/tags/* ]]; then
+            echo "should_build=true" >> "${GITHUB_OUTPUT}"
+            echo "reason=tag" >> "${GITHUB_OUTPUT}"
+            exit 0
+          fi
+
+          if [[ -z "${BEFORE_SHA}" || "${BEFORE_SHA}" == "0000000000000000000000000000000000000000" ]]; then
+            echo "should_build=true" >> "${GITHUB_OUTPUT}"
+            echo "reason=unknown_before" >> "${GITHUB_OUTPUT}"
+            exit 0
+          fi
+
+          changed_files="$(git diff --name-only "${BEFORE_SHA}" "${AFTER_SHA}")"
+          echo "Changed files:"
+          echo "${changed_files}"
+
+          if echo "${changed_files}" | grep -Eq '(\\.go$|^go\\.mod$|^go\\.sum$|^Dockerfile$|^\\.dockerignore$|^\\.github/workflows/docker-publish\\.yml$)'; then
+            echo "should_build=true" >> "${GITHUB_OUTPUT}"
+            echo "reason=code_change" >> "${GITHUB_OUTPUT}"
+            exit 0
+          fi
+
+          echo "should_build=false" >> "${GITHUB_OUTPUT}"
+          echo "reason=non_code_change" >> "${GITHUB_OUTPUT}"
+
   build-and-push:
+    needs: detect-changes
+    if: needs.detect-changes.outputs.should_build == 'true'
     runs-on: ubuntu-latest
     permissions:
       contents: read
