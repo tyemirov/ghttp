@@ -1,0 +1,388 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>gHTTP - Fast Go File Server</title>
+    <meta
+      name="description"
+      content="gHTTP is a Go-powered file server with python -m http.server ergonomics, structured zap-based request logging, Markdown rendering, and local HTTPS development certificates."
+    />
+
+    <link rel="canonical" href="https://ghttp.mprlab.com/" />
+    <meta property="og:site_name" content="gHTTP" />
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="gHTTP - Fast Go File Server" />
+    <meta
+      property="og:description"
+      content="A Go-powered file server with python -m http.server ergonomics, structured logging, Markdown rendering, and local HTTPS development certificates."
+    />
+    <meta property="og:url" content="https://ghttp.mprlab.com/" />
+
+    <meta name="twitter:card" content="summary" />
+    <meta name="twitter:title" content="gHTTP - Fast Go File Server" />
+    <meta
+      name="twitter:description"
+      content="A Go-powered file server with python -m http.server ergonomics, structured logging, Markdown rendering, and local HTTPS development certificates."
+    />
+
+    <link rel="icon" href="./assets/img/favicon.svg" type="image/svg+xml" />
+    <meta name="theme-color" content="#0f766e" />
+
+    <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin />
+    <link
+      rel="stylesheet"
+      href="https://cdn.jsdelivr.net/npm/@fontsource/space-grotesk@5.0.19/index.css"
+    />
+    <link
+      rel="stylesheet"
+      href="https://cdn.jsdelivr.net/npm/@fontsource/ibm-plex-sans@5.0.19/index.css"
+    />
+    <link
+      rel="stylesheet"
+      href="https://cdn.jsdelivr.net/npm/@fontsource/jetbrains-mono@5.0.19/index.css"
+    />
+
+    <link rel="stylesheet" href="./assets/css/site.css" />
+  </head>
+  <body>
+    <a class="skipLink" href="#content">Skip to content</a>
+
+    <header class="siteHeader" role="banner">
+      <div class="container headerInner">
+        <a class="brand" href="./" aria-label="gHTTP home">
+          <span class="brandMark" aria-hidden="true">g</span>
+          <span class="brandText">gHTTP</span>
+        </a>
+
+        <nav class="siteNav" aria-label="Primary">
+          <a class="navLink" href="#features">Features</a>
+          <a class="navLink" href="#quickstart">Quickstart</a>
+          <a class="navLink" href="#use-cases">Use cases</a>
+          <a class="navLink" href="#docs">Docs</a>
+        </nav>
+
+        <div class="headerCtas">
+          <a class="button secondaryButton" href="https://github.com/tyemirov/ghttp"
+            >GitHub</a
+          >
+          <a class="button primaryButton" href="#quickstart">Run it</a>
+        </div>
+      </div>
+    </header>
+
+    <main id="content" class="siteMain">
+      <section class="panel hero" id="top" aria-label="Hero">
+        <div class="container heroInner">
+          <div class="heroCopy">
+            <p class="eyebrow">Fast file serving, zero ceremony</p>
+            <h1 class="heroTitle">gHTTP</h1>
+            <p class="lead">
+              A Go-powered file server that mirrors
+              <code>python -m http.server</code>, adds structured Zap request logging,
+              renders Markdown to HTML, and provisions self-signed HTTPS certificates
+              for local development.
+            </p>
+
+            <div class="heroActions">
+              <a class="button primaryButton" href="#quickstart">Quickstart</a>
+              <a class="button ghostButton" href="https://github.com/tyemirov/ghttp/releases"
+                >Releases</a
+              >
+              <a
+                class="button ghostButton"
+                href="https://github.com/tyemirov/ghttp/pkgs/container/ghttp"
+                >Docker</a
+              >
+            </div>
+
+            <div class="quickCommand" aria-label="Quick install command">
+              <div class="quickCommandLabel">One-liner</div>
+              <pre class="codeBlock"><code>docker run -p 8000:8000 -v $(pwd):/data ghcr.io/tyemirov/ghttp:latest --directory /data</code></pre>
+            </div>
+
+            <div class="heroStats" role="list" aria-label="Highlights">
+              <div class="stat" role="listitem">
+                <div class="statValue">HTTP/1.0 + 1.1</div>
+                <div class="statLabel">Protocol toggle with sane keep-alive tuning</div>
+              </div>
+              <div class="stat" role="listitem">
+                <div class="statValue">Markdown pages</div>
+                <div class="statLabel">README.md becomes the directory landing page</div>
+              </div>
+              <div class="stat" role="listitem">
+                <div class="statValue">Local HTTPS</div>
+                <div class="statLabel">Self-managed dev CA and SAN-aware certs</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="heroShowcase" aria-label="Example output">
+            <div class="terminalCard">
+              <div class="terminalTop">
+                <div class="terminalDots" aria-hidden="true">
+                  <span class="terminalDot terminalDotRed"></span>
+                  <span class="terminalDot terminalDotYellow"></span>
+                  <span class="terminalDot terminalDotGreen"></span>
+                </div>
+                <div class="terminalTitle">Request log (console)</div>
+              </div>
+              <pre class="terminalBody"><code>$ ghttp --directory ./public 8000
+Serving HTTP on 0.0.0.0 port 8000 (http://localhost:8000/) ...
+127.0.0.1 - - [10/Feb/2026 21:32:05] "GET / HTTP/1.1" 200 1837</code></pre>
+            </div>
+
+            <div class="showcaseNote">
+              <p class="muted">
+                Prefer machine logs? Switch to JSON with
+                <code>--logging-type JSON</code>.
+              </p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="panel" id="features" aria-label="Features">
+        <div class="container">
+          <div class="sectionHeading">
+            <h2>Built for the stuff you actually do</h2>
+            <p class="sectionLead">
+              gHTTP keeps the simplicity of a single command, but adds the pieces
+              you end up re-building on every project anyway.
+            </p>
+          </div>
+
+          <div class="featureGrid">
+            <article class="featureCard">
+              <h3>Drop-in ergonomics</h3>
+              <p>
+                Default port <code>8000</code>, optional positional port argument, and
+                a single binary that behaves like a good shell tool.
+              </p>
+            </article>
+
+            <article class="featureCard">
+              <h3>Zap request logging</h3>
+              <p>
+                Human-friendly console logs or structured JSON logs with a flag
+                switch. No ad-hoc <code>fmt.Println</code> debugging.
+              </p>
+            </article>
+
+            <article class="featureCard">
+              <h3>Markdown as pages</h3>
+              <p>
+                Render <code>*.md</code> as HTML automatically. When a directory
+                contains <code>README.md</code>, it becomes the landing page.
+              </p>
+            </article>
+
+            <article class="featureCard">
+              <h3>Reverse proxy + WebSockets</h3>
+              <p>
+                Serve static assets and proxy API routes (including WebSocket
+                upgrades) via explicit from=to mappings.
+              </p>
+            </article>
+
+            <article class="featureCard">
+              <h3>Local HTTPS that feels native</h3>
+              <p>
+                <code>--https</code> provisions a development CA and issues SAN-aware
+                leaf certs on demand for localhost and your extra hosts.
+              </p>
+            </article>
+
+            <article class="featureCard">
+              <h3>Config everywhere</h3>
+              <p>
+                Flags map to Viper keys, config files live under
+                <code>~/.config/ghttp</code>, and env vars use <code>GHTTP_*</code>.
+              </p>
+            </article>
+          </div>
+        </div>
+      </section>
+
+      <section class="panel" id="quickstart" aria-label="Quickstart">
+        <div class="container">
+          <div class="sectionHeading">
+            <h2>Quickstart</h2>
+            <p class="sectionLead">
+              Pick your path. Each option keeps the workflow minimal and the
+              defaults predictable.
+            </p>
+          </div>
+
+          <div class="detailsGrid" role="list" aria-label="Installation options">
+            <details class="detailsCard" open role="listitem">
+              <summary class="detailsSummary">Docker (recommended)</summary>
+              <div class="detailsBody">
+                <p class="muted">
+                  Serve the current directory at <code>http://localhost:8000</code>.
+                </p>
+                <pre class="codeBlock"><code>docker pull ghcr.io/tyemirov/ghttp:latest
+docker run -p 8000:8000 -v $(pwd):/data ghcr.io/tyemirov/ghttp:latest --directory /data</code></pre>
+              </div>
+            </details>
+
+            <details class="detailsCard" role="listitem">
+              <summary class="detailsSummary">Go toolchain</summary>
+              <div class="detailsBody">
+                <p class="muted">
+                  Install the CLI and run it from any directory.
+                </p>
+                <pre class="codeBlock"><code>go install github.com/tyemirov/ghttp/cmd/ghttp@latest
+ghttp</code></pre>
+                <p class="muted">
+                  Go 1.25.4+ is required (matches <code>go.mod</code>).
+                </p>
+              </div>
+            </details>
+
+            <details class="detailsCard" id="download" role="listitem">
+              <summary class="detailsSummary">Binary releases</summary>
+              <div class="detailsBody">
+                <p class="muted">
+                  Download the latest binaries from GitHub Releases.
+                </p>
+                <p>
+                  <a class="textLink" href="https://github.com/tyemirov/ghttp/releases"
+                    >github.com/tyemirov/ghttp/releases</a
+                  >
+                </p>
+              </div>
+            </details>
+          </div>
+
+          <div class="callout">
+            <div class="calloutTitle">Common commands</div>
+            <div class="calloutGrid">
+              <div class="calloutItem">
+                <div class="calloutLabel">Serve a directory</div>
+                <pre class="codeBlock"><code>ghttp --directory /srv/www 9000</code></pre>
+              </div>
+              <div class="calloutItem">
+                <div class="calloutLabel">Enable local HTTPS</div>
+                <pre class="codeBlock"><code>ghttp --https</code></pre>
+              </div>
+              <div class="calloutItem">
+                <div class="calloutLabel">Proxy an API route</div>
+                <pre class="codeBlock"><code>ghttp --proxy /api=http://localhost:8081</code></pre>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="panel" id="use-cases" aria-label="Use cases">
+        <div class="container">
+          <div class="sectionHeading">
+            <h2>Use it like this</h2>
+            <p class="sectionLead">
+              gHTTP shines when you want a local server that behaves like a tool,
+              not a framework.
+            </p>
+          </div>
+
+          <div class="useCaseGrid">
+            <article class="useCaseCard">
+              <h3>Frontend preview</h3>
+              <p>
+                Serve a static build with clean request logs and Markdown
+                landing pages for docs.
+              </p>
+            </article>
+
+            <article class="useCaseCard">
+              <h3>Local HTTPS testing</h3>
+              <p>
+                Exercise secure cookies, service workers, and OAuth redirects
+                without fighting browser warnings.
+              </p>
+            </article>
+
+            <article class="useCaseCard">
+              <h3>Static + API in one origin</h3>
+              <p>
+                Keep CORS out of your day: serve assets and proxy your backend
+                from the same host and port.
+              </p>
+            </article>
+          </div>
+        </div>
+      </section>
+
+      <section class="panel" id="docs" aria-label="Docs and links">
+        <div class="container">
+          <div class="sectionHeading">
+            <h2>Docs</h2>
+            <p class="sectionLead">
+              The canonical docs live in the repository. These links are the
+              fastest way to the details.
+            </p>
+          </div>
+
+          <div class="linkGrid" role="list">
+            <a
+              class="linkCard"
+              role="listitem"
+              href="https://github.com/tyemirov/ghttp/blob/master/README.md"
+            >
+              <div class="linkCardTitle">README</div>
+              <div class="linkCardBody">Installation, flags, env vars, behavior.</div>
+            </a>
+
+            <a
+              class="linkCard"
+              role="listitem"
+              href="https://github.com/tyemirov/ghttp/blob/master/docs/docker-compose-ai-agents.md"
+            >
+              <div class="linkCardTitle">Docker Compose guide</div>
+              <div class="linkCardBody">
+                Integration patterns and distroless image constraints.
+              </div>
+            </a>
+
+            <a
+              class="linkCard"
+              role="listitem"
+              href="https://github.com/tyemirov/ghttp/blob/master/CHANGELOG.md"
+            >
+              <div class="linkCardTitle">Changelog</div>
+              <div class="linkCardBody">
+                Release notes and behavior changes (semver).
+              </div>
+            </a>
+
+            <a
+              class="linkCard"
+              role="listitem"
+              href="https://github.com/tyemirov/ghttp/pkgs/container/ghttp"
+            >
+              <div class="linkCardTitle">Container registry</div>
+              <div class="linkCardBody">
+                Pull <code>ghcr.io/tyemirov/ghttp</code> with pinned versions.
+              </div>
+            </a>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <footer class="siteFooter" role="contentinfo">
+      <div class="container footerInner">
+        <div class="footerLeft">
+          <div class="footerBrand">gHTTP</div>
+          <div class="footerMeta">
+            MIT licensed. Built for pragmatic local dev workflows.
+          </div>
+        </div>
+        <div class="footerRight">
+          <a class="textLink" href="#top">Back to top</a>
+        </div>
+      </div>
+    </footer>
+  </body>
+</html>
