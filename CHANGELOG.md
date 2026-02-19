@@ -1,5 +1,28 @@
 # Changelog
 
+## v0.4.2 — 2026-02-18 
+
+### Features ✨
+- _No changes._
+
+### Improvements ⚙️
+- Skip Docker image builds for documentation-only changes to optimize CI workflows.
+- Add GitHub Pages workflow to automate documentation site deployment.
+- Generalize browse mode file serving to serve direct non-directory files uniformly.
+
+### Bug Fixes 🐛
+- Fix browse mode to serve direct index files without triggering canonical redirects.
+- Correct browse mode to serve direct file requests from directory listing links, preventing redirect loops.
+
+### Testing 🧪
+- Add integration tests to validate browse mode serving of direct index and HTML files.
+
+### Docs 📚
+- Add comprehensive GitHub Pages landing site with enhanced styling and quickstart content.
+- Include new 404 error page with Google Analytics tracking.
+- Add CNAME file for custom domain.
+- Update documentation to show quickstart card content and Google Analytics integration.
+
 ## v0.4.1 — 2026-01-26
 
 ### Features ✨
