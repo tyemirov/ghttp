@@ -223,6 +223,46 @@ func TestIntegrationFileServerBrowseModeRendersMarkdownOnDirectRequest(t *testin
 	}
 }
 
+func TestIntegrationFileServerBrowseModeServesHtmlOnDirectRequest(t *testing.T) {
+	temporaryDirectory := t.TempDir()
+	exampleDirectory := filepath.Join(temporaryDirectory, "example")
+	mustMkDir(t, exampleDirectory)
+	writeFile(t, filepath.Join(exampleDirectory, "index.html"), "<html><body>Index page</body></html>")
+	writeFile(t, filepath.Join(exampleDirectory, "hello.html"), "<html><body>Hello page</body></html>")
+
+	handler := newTestFileServerHandler(temporaryDirectory, true, false, true, "")
+
+	testCases := []struct {
+		requestPath  string
+		expectedText string
+	}{
+		{requestPath: "/example/index.html", expectedText: "Index page"},
+		{requestPath: "/example/hello.html", expectedText: "Hello page"},
+	}
+
+	for _, testCase := range testCases {
+		recorder := httptest.NewRecorder()
+		request := httptest.NewRequest(http.MethodGet, testCase.requestPath, nil)
+
+		handler.ServeHTTP(recorder, request)
+
+		if recorder.Code != http.StatusOK {
+			t.Fatalf("request %s expected 200 status, got %d", testCase.requestPath, recorder.Code)
+		}
+		if recorder.Header().Get("Location") != "" {
+			t.Fatalf("request %s expected direct file content without redirect, got Location %q", testCase.requestPath, recorder.Header().Get("Location"))
+		}
+		bodyBytes, readErr := io.ReadAll(recorder.Result().Body)
+		if readErr != nil {
+			t.Fatalf("request %s read body: %v", testCase.requestPath, readErr)
+		}
+		responseBody := string(bodyBytes)
+		if !strings.Contains(responseBody, testCase.expectedText) {
+			t.Fatalf("request %s expected content %q, body: %s", testCase.requestPath, testCase.expectedText, responseBody)
+		}
+	}
+}
+
 func TestIntegrationFileServerBrowseModeListsRootDirectory(t *testing.T) {
 	temporaryDirectory := t.TempDir()
 	writeFile(t, filepath.Join(temporaryDirectory, "index.html"), "<html><body>Index page</body></html>")
