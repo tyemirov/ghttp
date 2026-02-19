@@ -18,9 +18,12 @@ import (
 )
 
 const (
-	browseModeStartupTimeout = 20 * time.Second
-	browseModeRequestTimeout = 5 * time.Second
-	processStopTimeout       = 5 * time.Second
+	browseModeStartupTimeout                    = 20 * time.Second
+	browseModeRequestTimeout                    = 5 * time.Second
+	processStopTimeout                          = 5 * time.Second
+	browseHandlerCoveragePackage                = "./cmd/ghttp,./internal/server"
+	browseHandlerCoverageSourcePath             = "/internal/server/browse_handler.go"
+	browseHandlerCoverageRequiredPercentageText = "100.0%"
 )
 
 func TestBrowseModeServesIndexFilesAsRegularFiles(t *testing.T) {
@@ -28,10 +31,43 @@ func TestBrowseModeServesIndexFilesAsRegularFiles(t *testing.T) {
 	serverBinaryPath := buildGHTTPBinaryForIntegrationTests(t, repositoryRoot)
 	siteDirectory := createBrowseModeFixtureDirectory(t)
 	serverPort := allocateFreePort(t)
-	startedServer := startGHTTPServerProcess(t, repositoryRoot, serverBinaryPath, siteDirectory, serverPort, []string{"--browse"})
-	baseURL := startedServer.baseURL
+	startedServer := startGHTTPServerProcess(t, repositoryRoot, serverBinaryPath, siteDirectory, serverPort, []string{"--browse"}, nil)
 
 	httpClient := &http.Client{Timeout: browseModeRequestTimeout}
+	runBrowseModeAssertions(t, httpClient, startedServer.baseURL)
+}
+
+func TestBrowseModeBrowseHandlerCoverageGate(t *testing.T) {
+	repositoryRoot := getRepositoryRoot(t)
+	coverageDirectoryPath := t.TempDir()
+	coverageBinaryPath := buildInstrumentedGHTTPBinaryForCoverage(t, repositoryRoot, browseHandlerCoveragePackage)
+	siteDirectory := createBrowseModeFixtureDirectory(t)
+	serverPort := allocateFreePort(t)
+	startedServer := startGHTTPServerProcess(
+		t,
+		repositoryRoot,
+		coverageBinaryPath,
+		siteDirectory,
+		serverPort,
+		[]string{"--browse"},
+		map[string]string{"GOCOVERDIR": coverageDirectoryPath},
+	)
+
+	httpClient := &http.Client{Timeout: browseModeRequestTimeout}
+	runBrowseModeCoverageRequests(t, httpClient, startedServer.baseURL)
+
+	stopErr := startedServer.stop()
+	if stopErr != nil {
+		t.Fatalf("stop ghttp process before coverage inspection: %v\nserver logs:\n%s", stopErr, startedServer.logBuffer.String())
+	}
+
+	coverageProfilePath := filepath.Join(t.TempDir(), "browse_handler.coverage.out")
+	writeCoverageProfileFromDirectory(t, repositoryRoot, coverageDirectoryPath, coverageProfilePath)
+	assertBrowseHandlerCoverageAtOneHundredPercent(t, repositoryRoot, coverageProfilePath)
+}
+
+func runBrowseModeAssertions(testingT *testing.T, httpClient *http.Client, baseURL string) {
+	testingT.Helper()
 
 	directoryListingCases := []struct {
 		name               string
@@ -74,10 +110,10 @@ func TestBrowseModeServesIndexFilesAsRegularFiles(t *testing.T) {
 
 	for _, directoryListingCase := range directoryListingCases {
 		directoryListingCase := directoryListingCase
-		t.Run(directoryListingCase.name, func(testingT *testing.T) {
-			statusCode, responseHeaders, responseBody := executeHTTPGet(testingT, httpClient, baseURL, directoryListingCase.requestPath)
-			if statusCode != http.StatusOK {
-				testingT.Fatalf("request %s expected status %d, got %d", directoryListingCase.requestPath, http.StatusOK, statusCode)
+		testingT.Run(directoryListingCase.name, func(testingT *testing.T) {
+			responseStatusCode, responseHeaders, responseBody := executeHTTPGet(testingT, httpClient, baseURL, directoryListingCase.requestPath)
+			if responseStatusCode != http.StatusOK {
+				testingT.Fatalf("request %s expected status %d, got %d", directoryListingCase.requestPath, http.StatusOK, responseStatusCode)
 			}
 			contentTypeHeader := responseHeaders.Get("Content-Type")
 			if !strings.Contains(contentTypeHeader, "text/html") {
@@ -154,10 +190,10 @@ func TestBrowseModeServesIndexFilesAsRegularFiles(t *testing.T) {
 
 	for _, directFileCase := range directFileCases {
 		directFileCase := directFileCase
-		t.Run(directFileCase.name, func(testingT *testing.T) {
-			statusCode, responseHeaders, responseBody := executeHTTPGet(testingT, httpClient, baseURL, directFileCase.requestPath)
-			if statusCode != http.StatusOK {
-				testingT.Fatalf("request %s expected status %d, got %d", directFileCase.requestPath, http.StatusOK, statusCode)
+		testingT.Run(directFileCase.name, func(testingT *testing.T) {
+			responseStatusCode, responseHeaders, responseBody := executeHTTPGet(testingT, httpClient, baseURL, directFileCase.requestPath)
+			if responseStatusCode != http.StatusOK {
+				testingT.Fatalf("request %s expected status %d, got %d", directFileCase.requestPath, http.StatusOK, responseStatusCode)
 			}
 			if responseHeaders.Get("Location") != "" {
 				testingT.Fatalf("request %s expected no redirect location header, got %q", directFileCase.requestPath, responseHeaders.Get("Location"))
@@ -173,6 +209,30 @@ func TestBrowseModeServesIndexFilesAsRegularFiles(t *testing.T) {
 	}
 }
 
+func runBrowseModeCoverageRequests(testingT *testing.T, httpClient *http.Client, baseURL string) {
+	testingT.Helper()
+	coverageCases := []struct {
+		requestPath         string
+		expectedStatusCodes []int
+	}{
+		{requestPath: "/index.html", expectedStatusCodes: []int{http.StatusOK}},
+		{requestPath: "/README.md", expectedStatusCodes: []int{http.StatusOK}},
+		{requestPath: "/example", expectedStatusCodes: []int{http.StatusOK, http.StatusMovedPermanently, http.StatusTemporaryRedirect}},
+		{requestPath: "/missing", expectedStatusCodes: []int{http.StatusNotFound}},
+		{requestPath: "/missing/", expectedStatusCodes: []int{http.StatusNotFound}},
+		{requestPath: "/", expectedStatusCodes: []int{http.StatusOK}},
+		{requestPath: "/example/", expectedStatusCodes: []int{http.StatusOK}},
+		{requestPath: "/unreadable/", expectedStatusCodes: []int{http.StatusForbidden, http.StatusNotFound, http.StatusOK}},
+	}
+
+	for _, coverageCase := range coverageCases {
+		responseStatusCode, _, _ := executeHTTPGet(testingT, httpClient, baseURL, coverageCase.requestPath)
+		if !containsStatusCode(coverageCase.expectedStatusCodes, responseStatusCode) {
+			testingT.Fatalf("request %s expected one of statuses %v, got %d", coverageCase.requestPath, coverageCase.expectedStatusCodes, responseStatusCode)
+		}
+	}
+}
+
 func buildGHTTPBinaryForIntegrationTests(testingT *testing.T, repositoryRoot string) string {
 	testingT.Helper()
 	binaryPath := filepath.Join(testingT.TempDir(), "ghttp-integration")
@@ -185,6 +245,69 @@ func buildGHTTPBinaryForIntegrationTests(testingT *testing.T, repositoryRoot str
 	return binaryPath
 }
 
+func buildInstrumentedGHTTPBinaryForCoverage(testingT *testing.T, repositoryRoot string, coveragePackage string) string {
+	testingT.Helper()
+	binaryPath := filepath.Join(testingT.TempDir(), "ghttp-integration-covered")
+	buildCommand := exec.Command(
+		"go",
+		"build",
+		"-cover",
+		"-coverpkg="+coveragePackage,
+		"-o",
+		binaryPath,
+		"./cmd/ghttp/main.go",
+	)
+	buildCommand.Dir = repositoryRoot
+	buildOutput, buildErr := buildCommand.CombinedOutput()
+	if buildErr != nil {
+		testingT.Fatalf("build instrumented integration binary: %v\n%s", buildErr, string(buildOutput))
+	}
+	return binaryPath
+}
+
+func writeCoverageProfileFromDirectory(testingT *testing.T, repositoryRoot string, coverageDirectoryPath string, coverageProfilePath string) {
+	testingT.Helper()
+	coverageExportCommand := exec.Command(
+		"go",
+		"tool",
+		"covdata",
+		"textfmt",
+		"-i="+coverageDirectoryPath,
+		"-o="+coverageProfilePath,
+	)
+	coverageExportCommand.Dir = repositoryRoot
+	coverageExportOutput, coverageExportErr := coverageExportCommand.CombinedOutput()
+	if coverageExportErr != nil {
+		testingT.Fatalf("export coverage profile: %v\n%s", coverageExportErr, string(coverageExportOutput))
+	}
+}
+
+func assertBrowseHandlerCoverageAtOneHundredPercent(testingT *testing.T, repositoryRoot string, coverageProfilePath string) {
+	testingT.Helper()
+	coverageReportCommand := exec.Command("go", "tool", "cover", "-func="+coverageProfilePath)
+	coverageReportCommand.Dir = repositoryRoot
+	coverageReportOutput, coverageReportErr := coverageReportCommand.CombinedOutput()
+	if coverageReportErr != nil {
+		testingT.Fatalf("read coverage report: %v\n%s", coverageReportErr, string(coverageReportOutput))
+	}
+
+	reportLines := strings.Split(string(coverageReportOutput), "\n")
+	foundBrowseHandlerLine := false
+	for _, reportLine := range reportLines {
+		if !strings.Contains(reportLine, browseHandlerCoverageSourcePath) {
+			continue
+		}
+		foundBrowseHandlerLine = true
+		normalizedLine := strings.TrimSpace(reportLine)
+		if !strings.HasSuffix(normalizedLine, browseHandlerCoverageRequiredPercentageText) {
+			testingT.Fatalf("browse handler coverage below required threshold %s: %s", browseHandlerCoverageRequiredPercentageText, normalizedLine)
+		}
+	}
+	if !foundBrowseHandlerLine {
+		testingT.Fatalf("coverage report does not contain browse handler path %s\nreport:\n%s", browseHandlerCoverageSourcePath, string(coverageReportOutput))
+	}
+}
+
 func allocateFreePort(testingT *testing.T) int {
 	testingT.Helper()
 	listener, listenErr := net.Listen("tcp", "127.0.0.1:0")
@@ -195,7 +318,15 @@ func allocateFreePort(testingT *testing.T) int {
 	return listener.Addr().(*net.TCPAddr).Port
 }
 
-func startGHTTPServerProcess(testingT *testing.T, repositoryRoot string, serverBinaryPath string, directoryPath string, port int, additionalArguments []string) *startedGHTTPServer {
+func startGHTTPServerProcess(
+	testingT *testing.T,
+	repositoryRoot string,
+	serverBinaryPath string,
+	directoryPath string,
+	port int,
+	additionalArguments []string,
+	environmentVariables map[string]string,
+) *startedGHTTPServer {
 	testingT.Helper()
 	arguments := []string{
 		strconv.Itoa(port),
@@ -205,6 +336,7 @@ func startGHTTPServerProcess(testingT *testing.T, repositoryRoot string, serverB
 
 	serverCommand := exec.Command(serverBinaryPath, arguments...)
 	serverCommand.Dir = repositoryRoot
+	serverCommand.Env = append(os.Environ(), formatEnvironmentVariables(environmentVariables)...)
 	serverLogBuffer := &bytes.Buffer{}
 	serverCommand.Stdout = serverLogBuffer
 	serverCommand.Stderr = serverLogBuffer
@@ -249,6 +381,17 @@ func startGHTTPServerProcess(testingT *testing.T, repositoryRoot string, serverB
 	}
 	testingT.Fatalf("ghttp process did not become ready within %s\nserver logs:\n%s", browseModeStartupTimeout, startedServer.logBuffer.String())
 	return nil
+}
+
+func formatEnvironmentVariables(environmentVariables map[string]string) []string {
+	if len(environmentVariables) == 0 {
+		return nil
+	}
+	formattedVariables := make([]string, 0, len(environmentVariables))
+	for variableName, variableValue := range environmentVariables {
+		formattedVariables = append(formattedVariables, variableName+"="+variableValue)
+	}
+	return formattedVariables
 }
 
 type startedGHTTPServer struct {
@@ -322,6 +465,13 @@ func createBrowseModeFixtureDirectory(testingT *testing.T) string {
 	if makeDirectoryErr := os.MkdirAll(nestedDirectory, 0o755); makeDirectoryErr != nil {
 		testingT.Fatalf("create nested directory: %v", makeDirectoryErr)
 	}
+	unreadableDirectory := filepath.Join(siteDirectory, "unreadable")
+	if makeDirectoryErr := os.MkdirAll(unreadableDirectory, 0o755); makeDirectoryErr != nil {
+		testingT.Fatalf("create unreadable directory: %v", makeDirectoryErr)
+	}
+	if chmodErr := os.Chmod(unreadableDirectory, 0o111); chmodErr != nil {
+		testingT.Fatalf("chmod unreadable directory: %v", chmodErr)
+	}
 
 	fileContentByPath := map[string]string{
 		filepath.Join(siteDirectory, "index.html"):   "<html><body>ROOT INDEX HTML</body></html>",
@@ -340,4 +490,13 @@ func createBrowseModeFixtureDirectory(testingT *testing.T) string {
 	}
 
 	return siteDirectory
+}
+
+func containsStatusCode(expectedStatusCodes []int, statusCode int) bool {
+	for _, expectedStatusCode := range expectedStatusCodes {
+		if expectedStatusCode == statusCode {
+			return true
+		}
+	}
+	return false
 }
