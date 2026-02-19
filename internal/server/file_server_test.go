@@ -225,6 +225,7 @@ func TestIntegrationFileServerBrowseModeRendersMarkdownOnDirectRequest(t *testin
 
 func TestIntegrationFileServerBrowseModeServesHtmlOnDirectRequest(t *testing.T) {
 	temporaryDirectory := t.TempDir()
+	writeFile(t, filepath.Join(temporaryDirectory, "index.html"), "<html><body>Root index page</body></html>")
 	exampleDirectory := filepath.Join(temporaryDirectory, "example")
 	mustMkDir(t, exampleDirectory)
 	writeFile(t, filepath.Join(exampleDirectory, "index.html"), "<html><body>Index page</body></html>")
@@ -236,6 +237,7 @@ func TestIntegrationFileServerBrowseModeServesHtmlOnDirectRequest(t *testing.T) 
 		requestPath  string
 		expectedText string
 	}{
+		{requestPath: "/index.html", expectedText: "Root index page"},
 		{requestPath: "/example/index.html", expectedText: "Index page"},
 		{requestPath: "/example/hello.html", expectedText: "Hello page"},
 	}
