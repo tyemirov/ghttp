@@ -2,7 +2,6 @@ package server
 
 import (
 	"html"
-	"io"
 	"io/fs"
 	"net/http"
 	pathpkg "path"
@@ -85,12 +84,7 @@ func (handler browseHandler) serveDirectFileRequest(responseWriter http.Response
 		return false
 	}
 
-	readSeeker, canSeek := requestedFile.(io.ReadSeeker)
-	if !canSeek {
-		return false
-	}
-
-	http.ServeContent(responseWriter, request, requestedFileInfo.Name(), requestedFileInfo.ModTime(), readSeeker)
+	http.ServeContent(responseWriter, request, requestedFileInfo.Name(), requestedFileInfo.ModTime(), requestedFile)
 	return true
 }
 

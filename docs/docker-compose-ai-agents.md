@@ -72,7 +72,8 @@ The CLI uses Viper with an `env` prefix of `GHTTP` and replaces dots in configur
   - Boolean; when truthy, disables Markdown rendering and serves `.md` files as plain assets.
   - Default: `false`.
 - `serve.browse` → `GHTTP_SERVE_BROWSE`
-  - Boolean; when truthy, folder URLs always return a directory listing even if index.html or README.md exists (direct file requests, including .md, still render normally).
+  - Boolean; when truthy, folder URLs always return a directory listing even if index.html or README.md exists.
+  - Direct file requests use the regular file-serving pipeline with no filename preference (including index files); `.md` requests still render when Markdown rendering is enabled.
   - Default: `false`.
 - `serve.logging_type` → `GHTTP_SERVE_LOGGING_TYPE`
   - Logging format: `"CONSOLE"` (human-oriented) or `"JSON"` (machine-oriented).
