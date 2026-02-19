@@ -1,5 +1,25 @@
 # Changelog
 
+## v0.4.3 — 2026-02-18
+
+### Features ✨
+- _No changes._
+
+### Improvements ⚙️
+- Clarified and improved folder browsing behavior for the `--browse` flag: folder URLs now always return directory listings, even if index.html or README.md exist. Direct file requests use the standard file-serving pipeline without filename preference; Markdown files still render when Markdown rendering is enabled.
+- Updated documentation to reflect the new `--browse` flag behavior.
+
+### Bug Fixes 🐛
+- _No changes._
+
+### Testing 🧪
+- Added comprehensive tests covering browse handler behavior, including index.html handling and root index.html direct requests in browse mode.
+- Improved test coverage for browse mode directory listing and direct file serving.
+- Added integration tests verifying browse mode behavior with various index.html file scenarios.
+
+### Docs 📚
+- Updated README and docker-compose-ai-agents.md docs to accurately describe the `--browse` flag behavior changes.
+
 ## v0.4.2 — 2026-02-18 
 
 ### Features ✨
