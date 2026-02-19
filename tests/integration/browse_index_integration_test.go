@@ -2,6 +2,7 @@ package integration
 
 import (
 	"bytes"
+	"errors"
 	"fmt"
 	"io"
 	"net"
@@ -19,6 +20,7 @@ import (
 const (
 	browseModeStartupTimeout = 20 * time.Second
 	browseModeRequestTimeout = 5 * time.Second
+	processStopTimeout       = 5 * time.Second
 )
 
 func TestBrowseModeServesIndexFilesAsRegularFiles(t *testing.T) {
@@ -26,7 +28,8 @@ func TestBrowseModeServesIndexFilesAsRegularFiles(t *testing.T) {
 	serverBinaryPath := buildGHTTPBinaryForIntegrationTests(t, repositoryRoot)
 	siteDirectory := createBrowseModeFixtureDirectory(t)
 	serverPort := allocateFreePort(t)
-	baseURL := startGHTTPServerProcess(t, repositoryRoot, serverBinaryPath, siteDirectory, serverPort, []string{"--browse"})
+	startedServer := startGHTTPServerProcess(t, repositoryRoot, serverBinaryPath, siteDirectory, serverPort, []string{"--browse"})
+	baseURL := startedServer.baseURL
 
 	httpClient := &http.Client{Timeout: browseModeRequestTimeout}
 
@@ -192,7 +195,7 @@ func allocateFreePort(testingT *testing.T) int {
 	return listener.Addr().(*net.TCPAddr).Port
 }
 
-func startGHTTPServerProcess(testingT *testing.T, repositoryRoot string, serverBinaryPath string, directoryPath string, port int, additionalArguments []string) string {
+func startGHTTPServerProcess(testingT *testing.T, repositoryRoot string, serverBinaryPath string, directoryPath string, port int, additionalArguments []string) *startedGHTTPServer {
 	testingT.Helper()
 	arguments := []string{
 		strconv.Itoa(port),
@@ -202,44 +205,94 @@ func startGHTTPServerProcess(testingT *testing.T, repositoryRoot string, serverB
 
 	serverCommand := exec.Command(serverBinaryPath, arguments...)
 	serverCommand.Dir = repositoryRoot
-	var serverLogBuffer bytes.Buffer
-	serverCommand.Stdout = &serverLogBuffer
-	serverCommand.Stderr = &serverLogBuffer
+	serverLogBuffer := &bytes.Buffer{}
+	serverCommand.Stdout = serverLogBuffer
+	serverCommand.Stderr = serverLogBuffer
 	if startErr := serverCommand.Start(); startErr != nil {
 		testingT.Fatalf("start ghttp process: %v", startErr)
 	}
 
-	var stopOnce sync.Once
-	stopServer := func() {
-		stopOnce.Do(func() {
-			if serverCommand.Process != nil {
-				_ = serverCommand.Process.Kill()
-			}
-			_ = serverCommand.Wait()
-		})
+	startedServer := &startedGHTTPServer{
+		command:   serverCommand,
+		logBuffer: serverLogBuffer,
+		baseURL:   fmt.Sprintf("http://127.0.0.1:%d", port),
 	}
-	testingT.Cleanup(stopServer)
+	testingT.Cleanup(func() {
+		stopErr := startedServer.stop()
+		if stopErr != nil {
+			testingT.Errorf("stop ghttp process: %v\nserver logs:\n%s", stopErr, startedServer.logBuffer.String())
+		}
+	})
 
-	baseURL := fmt.Sprintf("http://127.0.0.1:%d", port)
 	httpClient := &http.Client{Timeout: browseModeRequestTimeout}
 	startDeadline := time.Now().Add(browseModeStartupTimeout)
 	for time.Now().Before(startDeadline) {
-		request, requestErr := http.NewRequest(http.MethodGet, baseURL+"/", nil)
+		request, requestErr := http.NewRequest(http.MethodGet, startedServer.baseURL+"/", nil)
 		if requestErr != nil {
-			stopServer()
+			stopErr := startedServer.stop()
+			if stopErr != nil {
+				testingT.Fatalf("create startup probe request: %v\nstop server: %v\nserver logs:\n%s", requestErr, stopErr, startedServer.logBuffer.String())
+			}
 			testingT.Fatalf("create startup probe request: %v", requestErr)
 		}
 		response, responseErr := httpClient.Do(request)
 		if responseErr == nil {
 			response.Body.Close()
-			return baseURL
+			return startedServer
 		}
 		time.Sleep(100 * time.Millisecond)
 	}
 
-	stopServer()
-	testingT.Fatalf("ghttp process did not become ready within %s\nserver logs:\n%s", browseModeStartupTimeout, serverLogBuffer.String())
-	return ""
+	stopErr := startedServer.stop()
+	if stopErr != nil {
+		testingT.Fatalf("ghttp process did not become ready within %s\nstop server: %v\nserver logs:\n%s", browseModeStartupTimeout, stopErr, startedServer.logBuffer.String())
+	}
+	testingT.Fatalf("ghttp process did not become ready within %s\nserver logs:\n%s", browseModeStartupTimeout, startedServer.logBuffer.String())
+	return nil
+}
+
+type startedGHTTPServer struct {
+	command   *exec.Cmd
+	logBuffer *bytes.Buffer
+	baseURL   string
+	stopOnce  sync.Once
+	stopErr   error
+}
+
+func (startedServer *startedGHTTPServer) stop() error {
+	startedServer.stopOnce.Do(func() {
+		startedServer.stopErr = stopServerProcess(startedServer.command)
+	})
+	return startedServer.stopErr
+}
+
+func stopServerProcess(serverCommand *exec.Cmd) error {
+	if serverCommand == nil || serverCommand.Process == nil {
+		return nil
+	}
+	signalErr := serverCommand.Process.Signal(os.Interrupt)
+	if signalErr != nil && !errors.Is(signalErr, os.ErrProcessDone) {
+		return fmt.Errorf("signal interrupt: %w", signalErr)
+	}
+	waitErrorChannel := make(chan error, 1)
+	go func() {
+		waitErrorChannel <- serverCommand.Wait()
+	}()
+	select {
+	case waitErr := <-waitErrorChannel:
+		if waitErr == nil {
+			return nil
+		}
+		var processExitError *exec.ExitError
+		if errors.As(waitErr, &processExitError) {
+			return nil
+		}
+		return fmt.Errorf("wait process: %w", waitErr)
+	case <-time.After(processStopTimeout):
+		_ = serverCommand.Process.Kill()
+		waitErr := <-waitErrorChannel
+		return fmt.Errorf("process did not exit within %s: %w", processStopTimeout, waitErr)
+	}
 }
 
 func executeHTTPGet(testingT *testing.T, httpClient *http.Client, baseURL string, requestPath string) (int, http.Header, string) {
