@@ -1,5 +1,22 @@
 # Changelog
 
+## v0.4.3 — 2026-02-19
+
+### Features ✨
+- _No changes._
+
+### Improvements ⚙️
+- Add comprehensive integration tests for browse mode serving index files as regular files, including directory listings and direct file requests.
+
+### Bug Fixes 🐛
+- _No changes._
+
+### Testing 🧪
+- Add blackbox browse index serving integration tests with subprocess assertion to ensure correct server process behavior.
+
+### Docs 📚
+- _No changes._
+
 ## v0.4.3 — 2026-02-18
 
 ### Features ✨
