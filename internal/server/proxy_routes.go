@@ -69,10 +69,6 @@ func (routes ProxyRoutes) IsEmpty() bool {
 	return len(routes.routes) == 0
 }
 
-func (routes ProxyRoutes) Count() int {
-	return len(routes.routes)
-}
-
 func parseProxyMapping(mapping string) (proxyRoute, error) {
 	trimmedMapping := strings.TrimSpace(mapping)
 	if trimmedMapping == "" {

@@ -8,7 +8,6 @@ import (
 	"fmt"
 	"net"
 	"net/http"
-	"os"
 	"strconv"
 	"strings"
 	"syscall"
@@ -126,7 +125,7 @@ func (fileServer FileServer) Serve(ctx context.Context, configuration FileServer
 			fullURLScheme = "https"
 			activeMessage = logMessageServingHTTPS
 		}
-		fullURL := fmt.Sprintf("%s://%s", fullURLScheme, displayAddress)
+		fullURL := fileServer.servingAddressFormatter.FormatURLForLogging(fullURLScheme, configuration.BindAddress, configuration.Port)
 		fileServer.loggingService.Info(
 			activeMessage,
 			logging.String(logFieldDirectory, configuration.DirectoryPath),
@@ -192,24 +191,6 @@ func (fileServer FileServer) buildFileHandler(configuration FileServerConfigurat
 		handler = newProxyHandler(handler, configuration.ProxyRoutes)
 	}
 	return handler
-}
-
-// Handler exposes the HTTP handler used to serve files for the provided configuration.
-func (fileServer FileServer) Handler(configuration FileServerConfiguration) http.Handler {
-	return fileServer.buildFileHandler(configuration)
-}
-
-// FullHandler returns the complete handler chain including headers and logging wrappers,
-// matching the exact code path used in production by Serve(). Use this for integration tests.
-func (fileServer FileServer) FullHandler(configuration FileServerConfiguration) http.Handler {
-	fileHandler := fileServer.buildFileHandler(configuration)
-	wrappedHandler := fileServer.wrapWithHeaders(fileHandler, configuration.ProtocolVersion)
-	loggingType := fileServer.loggingService.Type()
-	if configuration.LoggingType != "" {
-		loggingType = configuration.LoggingType
-	}
-	normalizedLoggingType, _ := logging.NormalizeType(loggingType)
-	return fileServer.wrapWithLogging(wrappedHandler, normalizedLoggingType)
 }
 
 func (fileServer FileServer) wrapWithHeaders(handler http.Handler, protocolVersion string) http.Handler {
@@ -331,10 +312,7 @@ func (recorder *statusRecorder) Write(content []byte) (int, error) {
 
 // Hijack implements http.Hijacker to support WebSocket connections through the logging middleware.
 func (recorder *statusRecorder) Hijack() (net.Conn, *bufio.ReadWriter, error) {
-	if hijacker, ok := recorder.ResponseWriter.(http.Hijacker); ok {
-		return hijacker.Hijack()
-	}
-	return nil, nil, errors.New("hijacking not supported by underlying ResponseWriter")
+	return recorder.ResponseWriter.(http.Hijacker).Hijack()
 }
 
 func newStatusRecorder(responseWriter http.ResponseWriter) *statusRecorder {
@@ -351,19 +329,5 @@ func formatAddressInUseMessage(configuration FileServerConfiguration) string {
 }
 
 func isAddressInUse(err error) bool {
-	var opErr *net.OpError
-	if errors.As(err, &opErr) {
-		if errors.Is(opErr.Err, syscall.EADDRINUSE) {
-			return true
-		}
-		var syscallErr *os.SyscallError
-		if errors.As(opErr.Err, &syscallErr) {
-			return errors.Is(syscallErr.Err, syscall.EADDRINUSE)
-		}
-	}
-	var syscallErr *os.SyscallError
-	if errors.As(err, &syscallErr) {
-		return errors.Is(syscallErr.Err, syscall.EADDRINUSE)
-	}
 	return errors.Is(err, syscall.EADDRINUSE)
 }

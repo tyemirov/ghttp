@@ -90,13 +90,6 @@ func (resources *applicationResources) updateLogger(loggingType string) error {
 	return nil
 }
 
-func (resources *applicationResources) loggingType() string {
-	if resources.loggingService == nil {
-		return logging.TypeConsole
-	}
-	return resources.loggingService.Type()
-}
-
 // Execute runs the CLI using the provided context and arguments, returning an exit code.
 func Execute(ctx context.Context, arguments []string) int {
 	initialService, err := logging.NewService(logging.TypeConsole)

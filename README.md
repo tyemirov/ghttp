@@ -75,7 +75,7 @@ Flags map to Viper configuration keys. Environment variables use the `GHTTP_` pr
 | `--directory` | `GHTTP_SERVE_DIRECTORY` | Directory to serve files from. Defaults to the working directory. |
 | `--protocol` | `GHTTP_SERVE_PROTOCOL` | HTTP protocol version (use the full value, for example, `HTTP/1.0` or `HTTP/1.1`). |
 | `--no-md` | `GHTTP_SERVE_NO_MARKDOWN` | Disables Markdown rendering. |
-| `--browse` | `GHTTP_SERVE_BROWSE` | Folder URLs always return a directory listing, even if index.html or README.md exists. Direct file requests are handled by the same normal file pipeline with no filename preference (including index files); Markdown requests still render when Markdown rendering is enabled. Overrides `GHTTPD_DISABLE_DIR_INDEX`. |
+| `--browse` | `GHTTP_SERVE_BROWSE` | Folder URLs always return a directory listing, even if index.html or README.md exists. Direct file requests are handled by the same normal file pipeline with no filename preference (including index files); Markdown requests still render when Markdown rendering is enabled. Example: `/` returns the listing, while `/index.html` returns the file content. Overrides `GHTTPD_DISABLE_DIR_INDEX`. |
 | `--logging-type` | `GHTTP_SERVE_LOGGING_TYPE` | CONSOLE or JSON. |
 | `--proxy` | `GHTTP_SERVE_PROXIES` | Enables reverse proxy. Repeatable from=to mapping (for example, `/api=http://backend:8081`); backend can be `http://` or `https://` regardless of frontend scheme; env uses comma-separated list. |
 | `--proxy-path` | `GHTTP_SERVE_PROXY_PATH_PREFIX` | Legacy from-path prefix (for example, `/api`); requires `--proxy-backend`. |

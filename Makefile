@@ -1,11 +1,9 @@
 GO_SOURCES := $(shell find . -name '*.go' -not -path "./vendor/*")
-UNIT_PACKAGES := $(shell go list ./... | grep -v '/tests$$')
-INTEGRATION_TEST_PATTERN := Integration
 RELEASE_TARGETS := linux/amd64 linux/arm64 darwin/amd64 darwin/arm64
 RELEASE_DIRECTORY := dist
 RELEASE_BINARY_NAME := ghttp
 
-.PHONY: format check-format lint test test-unit test-integration build release ci
+.PHONY: format check-format lint check-no-unit-tests test test-integration test-integration-coverage-gate build release ci
 
 format:
 	gofmt -w $(GO_SOURCES)
@@ -21,13 +19,21 @@ check-format:
 lint:
 	go vet ./...
 
-test-unit:
-	go test $(UNIT_PACKAGES)
-
 test-integration:
-	go test ./... -run $(INTEGRATION_TEST_PATTERN)
+	go test ./tests/integration -count=1
 
-test: test-unit test-integration
+test-integration-coverage-gate:
+	go test ./tests/integration -run 'Test(BrowseModeBrowseHandlerCoverageGate|GlobalIntegrationCoverageGate)' -count=1
+
+check-no-unit-tests:
+	@unexpected_tests="$$(find . -name '*_test.go' -type f | grep -v '^./tests/integration/' || true)"; \
+	if [ -n "$$unexpected_tests" ]; then \
+		echo "Non-integration test files are not allowed:"; \
+		echo "$$unexpected_tests"; \
+		exit 1; \
+	fi
+
+test: check-no-unit-tests test-integration test-integration-coverage-gate
 
 build:
 	mkdir -p bin

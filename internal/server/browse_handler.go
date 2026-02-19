@@ -38,7 +38,7 @@ func (handler browseHandler) ServeHTTP(responseWriter http.ResponseWriter, reque
 		return
 	}
 
-	if !strings.HasSuffix(request.URL.Path, "/") || request.URL.Path == "" {
+	if !strings.HasSuffix(request.URL.Path, "/") {
 		handler.next.ServeHTTP(responseWriter, request)
 		return
 	}
@@ -50,23 +50,13 @@ func (handler browseHandler) ServeHTTP(responseWriter http.ResponseWriter, reque
 	}
 	defer directoryFile.Close()
 
-	directoryInfo, statErr := directoryFile.Stat()
-	if statErr != nil || !directoryInfo.IsDir() {
-		handler.next.ServeHTTP(responseWriter, request)
-		return
-	}
-
-	entries, readErr := directoryFile.Readdir(-1)
-	if readErr != nil {
-		handler.next.ServeHTTP(responseWriter, request)
-		return
-	}
+	entries, _ := directoryFile.Readdir(-1)
 
 	handler.renderListing(responseWriter, request, entries)
 }
 
 func (handler browseHandler) serveDirectFileRequest(responseWriter http.ResponseWriter, request *http.Request) bool {
-	if request.URL.Path == "" || strings.HasSuffix(request.URL.Path, "/") {
+	if strings.HasSuffix(request.URL.Path, "/") {
 		return false
 	}
 
@@ -76,8 +66,8 @@ func (handler browseHandler) serveDirectFileRequest(responseWriter http.Response
 	}
 	defer requestedFile.Close()
 
-	requestedFileInfo, statErr := requestedFile.Stat()
-	if statErr != nil || requestedFileInfo.IsDir() {
+	requestedFileInfo, _ := requestedFile.Stat()
+	if requestedFileInfo.IsDir() {
 		return false
 	}
 	if isMarkdownFile(requestedFileInfo.Name()) {

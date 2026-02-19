@@ -142,7 +142,6 @@ func runHTTPSUninstall(cmd *cobra.Command) error {
 	if uninstallErr != nil {
 		return fmt.Errorf("uninstall certificate authority: %w", uninstallErr)
 	}
-	removalErrors := []error{}
 	removalTargets := []string{
 		filepath.Join(certificateDirectory, certificates.DefaultRootCertificateFileName),
 		filepath.Join(certificateDirectory, certificates.DefaultRootPrivateKeyFileName),
@@ -150,12 +149,7 @@ func runHTTPSUninstall(cmd *cobra.Command) error {
 		filepath.Join(certificateDirectory, certificates.DefaultLeafPrivateKeyFileName),
 	}
 	for _, target := range removalTargets {
-		if err := fileSystem.Remove(target); err != nil {
-			removalErrors = append(removalErrors, err)
-		}
-	}
-	if len(removalErrors) > 0 {
-		return errors.Join(removalErrors...)
+		_ = fileSystem.Remove(target)
 	}
 	logCertificateMessage(resources, "certificate authority uninstalled", certificateDirectory)
 	return nil
@@ -253,20 +247,11 @@ func logCertificateMessage(resources *applicationResources, message string, dire
 	if resources.loggingService == nil {
 		return
 	}
-	if resources.loggingType() == logging.TypeConsole {
-		resources.loggingService.Info(fmt.Sprintf("%s (%s)", message, directory))
-		return
-	}
 	resources.loggingService.Info(message, certificateDirectoryField(directory))
 }
 
 func logServingHTTPSMessage(resources *applicationResources, directory string, hosts []string) {
 	if resources.loggingService == nil {
-		return
-	}
-	if resources.loggingType() == logging.TypeConsole {
-		displayHosts := strings.Join(hosts, ", ")
-		resources.loggingService.Info(fmt.Sprintf("serving https (%s) hosts=[%s]", directory, displayHosts))
 		return
 	}
 	resources.loggingService.Info("serving https", certificateDirectoryField(directory), logging.Strings(logFieldHosts, hosts))

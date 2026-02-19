@@ -31,8 +31,11 @@ jobs:
       - name: Run linting
         run: make lint
 
-      - name: Run unit tests
-        run: make test-unit
+      - name: Enforce integration-only tests
+        run: make check-no-unit-tests
 
       - name: Run integration tests
         run: make test-integration
+
+      - name: Run integration coverage gate
+        run: make test-integration-coverage-gate

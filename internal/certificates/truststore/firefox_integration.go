@@ -8,7 +8,6 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
-	"runtime"
 	"strings"
 
 	"github.com/tyemirov/ghttp/internal/certificates"
@@ -109,31 +108,6 @@ func profileContainsNSSDatabase(fileSystem certificates.FileSystem, profilePath 
 	cert8Path := filepath.Join(profilePath, "cert8.db")
 	exists, err = fileSystem.FileExists(cert8Path)
 	return err == nil && exists
-}
-
-func defaultFirefoxProfileDirectories() []string {
-	switch runtime.GOOS {
-	case "darwin":
-		home, err := os.UserHomeDir()
-		if err != nil {
-			return nil
-		}
-		return []string{filepath.Join(home, "Library", "Application Support", "Firefox", "Profiles")}
-	case "linux":
-		home, err := os.UserHomeDir()
-		if err != nil {
-			return nil
-		}
-		return []string{filepath.Join(home, ".mozilla", "firefox")}
-	case "windows":
-		appData := os.Getenv("APPDATA")
-		if appData == "" {
-			return nil
-		}
-		return []string{filepath.Join(appData, "Mozilla", "Firefox", "Profiles")}
-	default:
-		return nil
-	}
 }
 
 func ensureFirefoxEnterpriseRootsPreference(fileSystem certificates.FileSystem, profilePath string) error {

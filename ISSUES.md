@@ -96,3 +96,17 @@ Drop the `ghttp https` CLI subcommands so `--https` is the single self-managed c
 Align `docs/docker-compose-ai-agents.md` with the current image name, configuration precedence, config file environment variable, legacy proxy settings, and browse behavior.
 
 ## Planning
+
+### 403: Integration-only process coverage suite for browse and global runtime paths
+**Status:** Resolved
+
+Added a black-box integration harness that:
+- compiles instrumented `ghttp` binaries,
+- starts real subprocesses for HTTP/HTTPS/proxy/websocket flows,
+- validates browse-mode index handling (`/` remains listing, `/index.html` serves file),
+- merges subprocess coverage data and enforces a global coverage floor in CI.
+
+Validation:
+- `go vet ./...`
+- `go test ./...`
+- `make ci`

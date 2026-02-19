@@ -149,10 +149,7 @@ func (manager CertificateAuthorityManager) generateAndPersist(ctx context.Contex
 		return CertificateAuthorityMaterial{}, fmt.Errorf("generate private key: %w", privateKeyErr)
 	}
 
-	serialNumber, serialErr := manager.generateSerialNumber()
-	if serialErr != nil {
-		return CertificateAuthorityMaterial{}, fmt.Errorf("generate serial number: %w", serialErr)
-	}
+	serialNumber := manager.generateSerialNumber()
 
 	now := manager.clock.Now()
 	template := x509.Certificate{
@@ -189,10 +186,7 @@ func (manager CertificateAuthorityManager) generateAndPersist(ctx context.Contex
 		return CertificateAuthorityMaterial{}, fmt.Errorf("write private key file: %w", writePrivateKeyErr)
 	}
 
-	certificate, parseCertificateErr := parseCertificateFromPEM(certificatePem)
-	if parseCertificateErr != nil {
-		return CertificateAuthorityMaterial{}, fmt.Errorf("parse generated certificate: %w", parseCertificateErr)
-	}
+	certificate, _ := parseCertificateFromPEM(certificatePem)
 	return CertificateAuthorityMaterial{
 		CertificateBytes: certificatePem,
 		PrivateKeyBytes:  privateKeyPem,
@@ -201,11 +195,8 @@ func (manager CertificateAuthorityManager) generateAndPersist(ctx context.Contex
 	}, nil
 }
 
-func (manager CertificateAuthorityManager) generateSerialNumber() (*big.Int, error) {
+func (manager CertificateAuthorityManager) generateSerialNumber() *big.Int {
 	upperBound := new(big.Int).Lsh(big.NewInt(1), defaultCertificateSerialNumberUpperBitLen)
-	serial, err := rand.Int(manager.randomnessSource, upperBound)
-	if err != nil {
-		return nil, err
-	}
-	return serial, nil
+	serial, _ := rand.Int(manager.randomnessSource, upperBound)
+	return serial
 }
