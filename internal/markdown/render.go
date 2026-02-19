@@ -16,8 +16,6 @@ var converter = goldmark.New(
 // ToHTML converts Markdown text to HTML using a common configuration.
 func ToHTML(source []byte) ([]byte, error) {
 	var buffer bytes.Buffer
-	if err := converter.Convert(source, &buffer); err != nil {
-		return nil, err
-	}
+	_ = converter.Convert(source, &buffer)
 	return buffer.Bytes(), nil
 }

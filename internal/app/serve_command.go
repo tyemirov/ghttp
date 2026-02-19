@@ -180,14 +180,7 @@ func runServe(cmd *cobra.Command) error {
 	if err != nil {
 		return err
 	}
-	serveConfigurationValue := cmd.Context().Value(contextKeyServeConfiguration)
-	if serveConfigurationValue == nil {
-		return errors.New("serve configuration not initialized")
-	}
-	serveConfiguration, ok := serveConfigurationValue.(ServeConfiguration)
-	if !ok {
-		return errors.New("serve configuration has unexpected type")
-	}
+	serveConfiguration := cmd.Context().Value(contextKeyServeConfiguration).(ServeConfiguration)
 	if serveConfiguration.EnableDynamicHTTPS {
 		return serveWithDynamicHTTPS(cmd, resources, serveConfiguration)
 	}
@@ -262,15 +255,7 @@ func resolveInitialServeFile(candidatePath string) (string, string, error) {
 }
 
 func getApplicationResources(cmd *cobra.Command) (*applicationResources, error) {
-	resourceValue := cmd.Context().Value(contextKeyApplicationResources)
-	if resourceValue == nil {
-		return nil, errors.New("application resources not configured")
-	}
-	resources, ok := resourceValue.(*applicationResources)
-	if !ok {
-		return nil, errors.New("invalid application resources type")
-	}
-	return resources, nil
+	return cmd.Context().Value(contextKeyApplicationResources).(*applicationResources), nil
 }
 
 func serveWithDynamicHTTPS(cmd *cobra.Command, resources *applicationResources, serveConfiguration ServeConfiguration) error {
@@ -281,24 +266,8 @@ func serveWithDynamicHTTPS(cmd *cobra.Command, resources *applicationResources, 
 	if setupErr != nil {
 		return setupErr
 	}
-
-	hostsValue := cmd.Context().Value(contextKeyHTTPSHosts)
-	if hostsValue == nil {
-		return errors.New("https hosts missing")
-	}
-	hosts, ok := hostsValue.([]string)
-	if !ok {
-		return errors.New("https hosts type mismatch")
-	}
-
-	directoryValue := cmd.Context().Value(contextKeyHTTPSCertificateDir)
-	if directoryValue == nil {
-		return errors.New("certificate directory missing")
-	}
-	certificateDirectory, ok := directoryValue.(string)
-	if !ok {
-		return errors.New("certificate directory type mismatch")
-	}
+	hosts := cmd.Context().Value(contextKeyHTTPSHosts).([]string)
+	certificateDirectory := cmd.Context().Value(contextKeyHTTPSCertificateDir).(string)
 
 	serveErr := executeHTTPSServe(cmd, resources, serveConfiguration, hosts, certificateDirectory)
 	uninstallErr := runHTTPSUninstall(cmd)

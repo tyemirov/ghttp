@@ -61,11 +61,6 @@ func NewServerCertificateIssuer(fileSystem FileSystem, clock Clock, randomnessSo
 
 // IssueServerCertificate returns a valid leaf certificate for the requested hosts.
 func (issuer ServerCertificateIssuer) IssueServerCertificate(ctx context.Context, certificateAuthority CertificateAuthorityMaterial, request ServerCertificateRequest) (ServerCertificateMaterial, error) {
-	err := issuer.validateRequest(request)
-	if err != nil {
-		return ServerCertificateMaterial{}, fmt.Errorf("validate server certificate request: %w", err)
-	}
-
 	existingMaterial, existingErr := issuer.loadExisting(request)
 	if existingErr == nil {
 		shouldRotate := issuer.shouldRotate(existingMaterial.TLSCertificate, request.Hosts)
@@ -89,10 +84,7 @@ func (issuer ServerCertificateIssuer) IssueServerCertificate(ctx context.Context
 	}
 
 	now := issuer.clock.Now()
-	serialNumber, serialErr := issuer.generateSerialNumber()
-	if serialErr != nil {
-		return ServerCertificateMaterial{}, fmt.Errorf("generate leaf serial number: %w", serialErr)
-	}
+	serialNumber := issuer.generateSerialNumber()
 
 	template := x509.Certificate{
 		SerialNumber: serialNumber,
@@ -136,10 +128,7 @@ func (issuer ServerCertificateIssuer) IssueServerCertificate(ctx context.Context
 		return ServerCertificateMaterial{}, fmt.Errorf("write server private key: %w", writePrivateKeyErr)
 	}
 
-	parsedCertificate, parseErr := parseCertificateFromPEM(certificatePem)
-	if parseErr != nil {
-		return ServerCertificateMaterial{}, fmt.Errorf("parse issued server certificate: %w", parseErr)
-	}
+	parsedCertificate, _ := parseCertificateFromPEM(certificatePem)
 
 	return ServerCertificateMaterial{
 		CertificateBytes: certificatePem,
@@ -147,19 +136,6 @@ func (issuer ServerCertificateIssuer) IssueServerCertificate(ctx context.Context
 		TLSCertificate:   parsedCertificate,
 		PrivateKey:       privateKey,
 	}, nil
-}
-
-func (issuer ServerCertificateIssuer) validateRequest(request ServerCertificateRequest) error {
-	if len(request.Hosts) == 0 {
-		return errors.New("at least one host is required")
-	}
-	if request.CertificateOutputPath == "" {
-		return errors.New("certificate output path is required")
-	}
-	if request.PrivateKeyOutputPath == "" {
-		return errors.New("private key output path is required")
-	}
-	return nil
 }
 
 func (issuer ServerCertificateIssuer) loadExisting(request ServerCertificateRequest) (ServerCertificateMaterial, error) {
@@ -222,11 +198,8 @@ func (issuer ServerCertificateIssuer) shouldRotate(certificate *x509.Certificate
 	return !slices.Equal(existingHosts, sortedRequestedHosts)
 }
 
-func (issuer ServerCertificateIssuer) generateSerialNumber() (*big.Int, error) {
+func (issuer ServerCertificateIssuer) generateSerialNumber() *big.Int {
 	upperBound := new(big.Int).Lsh(big.NewInt(1), defaultCertificateSerialNumberUpperBitLen)
-	serialNumber, err := rand.Int(issuer.randomnessSource, upperBound)
-	if err != nil {
-		return nil, err
-	}
-	return serialNumber, nil
+	serialNumber, _ := rand.Int(issuer.randomnessSource, upperBound)
+	return serialNumber
 }

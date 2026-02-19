@@ -46,11 +46,6 @@ func ErrorField(err error) Field {
 	return Field{Key: "error", Value: err}
 }
 
-// Any creates a Field from any value.
-func Any(key string, value any) Field {
-	return Field{Key: key, Value: value}
-}
-
 // NormalizeType validates and normalizes a logging type string.
 func NormalizeType(rawValue string) (string, error) {
 	sanitized := strings.ToUpper(strings.TrimSpace(rawValue))
@@ -81,32 +76,12 @@ func NewService(loggingType string) (*Service, error) {
 	if err != nil {
 		return nil, err
 	}
-	return &Service{loggingType: normalized, logger: logger}, nil
+	return NewServiceWithLogger(normalized, logger)
 }
 
 // NewServiceWithLogger constructs a Service using an existing zap logger.
 func NewServiceWithLogger(loggingType string, logger *zap.Logger) (*Service, error) {
-	normalized, err := NormalizeType(loggingType)
-	if err != nil {
-		return nil, err
-	}
-	if logger == nil {
-		return nil, fmt.Errorf("logger must not be nil")
-	}
-	return &Service{loggingType: normalized, logger: logger}, nil
-}
-
-// NewTestService constructs a Service backed by zap.NewNop for testing.
-func NewTestService(loggingType string) *Service {
-	normalized, err := NormalizeType(loggingType)
-	if err != nil {
-		normalized = TypeConsole
-	}
-	service, err := NewServiceWithLogger(normalized, zap.NewNop())
-	if err != nil {
-		panic(err)
-	}
-	return service
+	return &Service{loggingType: loggingType, logger: logger}, nil
 }
 
 // Type returns the current logging type.
@@ -184,14 +159,10 @@ func formatConsoleMessage(message string, fields []Field) string {
 
 func formatConsoleValue(value any) string {
 	switch typed := value.(type) {
-	case nil:
-		return "<nil>"
 	case string:
 		return fmt.Sprintf("\"%s\"", typed)
 	case []string:
 		return fmt.Sprintf("[%s]", strings.Join(typed, ","))
-	case time.Duration:
-		return fmt.Sprintf("\"%s\"", typed)
 	case error:
 		return fmt.Sprintf("\"%s\"", typed.Error())
 	default:

@@ -23,7 +23,7 @@ test-integration:
 	go test ./tests/integration -count=1
 
 test-integration-coverage-gate:
-	go test ./tests/integration -run TestBrowseModeBrowseHandlerCoverageGate -count=1
+	go test ./tests/integration -run 'Test(BrowseModeBrowseHandlerCoverageGate|GlobalIntegrationCoverageGate)' -count=1
 
 check-no-unit-tests:
 	@unexpected_tests="$$(find . -name '*_test.go' -type f | grep -v '^./tests/integration/' || true)"; \

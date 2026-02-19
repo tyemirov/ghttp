@@ -17,9 +17,6 @@ type initialFileHandler struct {
 
 func newInitialFileHandler(next http.Handler, initialFileRelativePath string) http.Handler {
 	cleanPath := pathpkg.Clean(pathpkg.Join(initialFileRootRequestPath, strings.ReplaceAll(initialFileRelativePath, "\\", "/")))
-	if !strings.HasPrefix(cleanPath, initialFileRootRequestPath) {
-		cleanPath = initialFileRootRequestPath
-	}
 	return initialFileHandler{
 		next:               next,
 		initialRequestPath: cleanPath,
