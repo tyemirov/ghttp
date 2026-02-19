@@ -225,6 +225,7 @@ func TestIntegrationFileServerBrowseModeRendersMarkdownOnDirectRequest(t *testin
 
 func TestIntegrationFileServerBrowseModeServesHtmlOnDirectRequest(t *testing.T) {
 	temporaryDirectory := t.TempDir()
+	writeFile(t, filepath.Join(temporaryDirectory, "index.html"), "<html><body>Root index page</body></html>")
 	exampleDirectory := filepath.Join(temporaryDirectory, "example")
 	mustMkDir(t, exampleDirectory)
 	writeFile(t, filepath.Join(exampleDirectory, "index.html"), "<html><body>Index page</body></html>")
@@ -236,6 +237,7 @@ func TestIntegrationFileServerBrowseModeServesHtmlOnDirectRequest(t *testing.T) 
 		requestPath  string
 		expectedText string
 	}{
+		{requestPath: "/index.html", expectedText: "Root index page"},
 		{requestPath: "/example/index.html", expectedText: "Index page"},
 		{requestPath: "/example/hello.html", expectedText: "Hello page"},
 	}
@@ -289,6 +291,78 @@ func TestIntegrationFileServerBrowseModeListsRootDirectory(t *testing.T) {
 	if strings.Contains(responseBody, "Index page") {
 		t.Fatalf("expected directory listing instead of index file content, body: %s", responseBody)
 	}
+}
+
+func TestIntegrationFileServerBrowseModeIndexHTMLUseCases(t *testing.T) {
+	temporaryDirectory := t.TempDir()
+	rootIndexContent := "<html><body>Root index page</body></html>"
+	nestedIndexContent := "<html><body>Example index page</body></html>"
+	writeFile(t, filepath.Join(temporaryDirectory, "index.html"), rootIndexContent)
+	exampleDirectory := filepath.Join(temporaryDirectory, "example")
+	mustMkDir(t, exampleDirectory)
+	writeFile(t, filepath.Join(exampleDirectory, "index.html"), nestedIndexContent)
+
+	handler := newTestFileServerHandler(temporaryDirectory, true, false, true, "")
+
+	assertDirectoryListingResponse := func(testingT *testing.T, requestPath string, expectedLink string, unexpectedText string) {
+		testingT.Helper()
+		recorder := httptest.NewRecorder()
+		request := httptest.NewRequest(http.MethodGet, requestPath, nil)
+		handler.ServeHTTP(recorder, request)
+
+		if recorder.Code != http.StatusOK {
+			testingT.Fatalf("request %s expected 200 status, got %d", requestPath, recorder.Code)
+		}
+		bodyBytes, readErr := io.ReadAll(recorder.Result().Body)
+		if readErr != nil {
+			testingT.Fatalf("request %s read body: %v", requestPath, readErr)
+		}
+		responseBody := string(bodyBytes)
+		if !strings.Contains(responseBody, expectedLink) {
+			testingT.Fatalf("request %s expected listing link %q, body: %s", requestPath, expectedLink, responseBody)
+		}
+		if strings.Contains(responseBody, unexpectedText) {
+			testingT.Fatalf("request %s expected directory listing instead of index content %q, body: %s", requestPath, unexpectedText, responseBody)
+		}
+	}
+
+	assertDirectFileResponse := func(testingT *testing.T, requestPath string, expectedText string) {
+		testingT.Helper()
+		recorder := httptest.NewRecorder()
+		request := httptest.NewRequest(http.MethodGet, requestPath, nil)
+		handler.ServeHTTP(recorder, request)
+
+		if recorder.Code != http.StatusOK {
+			testingT.Fatalf("request %s expected 200 status, got %d", requestPath, recorder.Code)
+		}
+		if recorder.Header().Get("Location") != "" {
+			testingT.Fatalf("request %s expected no redirect location header, got %q", requestPath, recorder.Header().Get("Location"))
+		}
+		bodyBytes, readErr := io.ReadAll(recorder.Result().Body)
+		if readErr != nil {
+			testingT.Fatalf("request %s read body: %v", requestPath, readErr)
+		}
+		responseBody := string(bodyBytes)
+		if !strings.Contains(responseBody, expectedText) {
+			testingT.Fatalf("request %s expected index content %q, body: %s", requestPath, expectedText, responseBody)
+		}
+	}
+
+	t.Run("RootDirectoryListsIndexLink", func(testingT *testing.T) {
+		assertDirectoryListingResponse(testingT, "/", "href=\"/index.html\"", "Root index page")
+	})
+
+	t.Run("RootIndexFileServesDirectly", func(testingT *testing.T) {
+		assertDirectFileResponse(testingT, "/index.html", "Root index page")
+	})
+
+	t.Run("NestedDirectoryListsIndexLink", func(testingT *testing.T) {
+		assertDirectoryListingResponse(testingT, "/example/", "href=\"/example/index.html\"", "Example index page")
+	})
+
+	t.Run("NestedIndexFileServesDirectly", func(testingT *testing.T) {
+		assertDirectFileResponse(testingT, "/example/index.html", "Example index page")
+	})
 }
 
 func TestIntegrationFileServerServesInitialHtmlFileAtRoot(t *testing.T) {
