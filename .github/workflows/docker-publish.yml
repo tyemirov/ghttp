@@ -3,10 +3,8 @@ name: Docker Image (ghttp → GHCR)
 on:
   workflow_dispatch: {}
   push:
-    branches: 
-      - master
     tags:
-      - "v*.*.*"
+      - "v*"
 
 env:
   registry: ghcr.io
@@ -99,7 +97,7 @@ jobs:
 
           if [[ "${{ github.ref }}" == refs/tags/v* ]]; then
             version="${GITHUB_REF#refs/tags/}"
-            tags="${tags},${registry}/${image}:${version}"
+            tags="${tags},${registry}/${image}:${version},${registry}/${image}:latest"
             major_minor="${version%.*}"
             major="${version%%.*}"
             tags="${tags},${registry}/${image}:${major_minor},${registry}/${image}:${major}"
