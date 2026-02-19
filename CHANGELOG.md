@@ -1,5 +1,35 @@
 # Changelog
 
+## v0.5.0 — 2026-02-19
+
+### Features ✨
+- Introduced integration-only process coverage suite enhancing browse and global runtime path validation.
+- Added black-box integration harness running real subprocesses to improve HTTP/HTTPS/proxy/websocket flow testing.
+- Enforced global coverage floor in Continuous Integration via subprocess coverage merging.
+
+### Improvements ⚙️
+- Refined the `--browse` flag behavior with clearer semantics: folder URLs show listings, direct file requests serve the file content.
+- Streamlined logs by removing redundant console-specific logging branches for HTTPS certificate operations.
+- Updated Makefile and CI workflows to prohibit unit tests, enforce integration-only tests, and gate integration coverage.
+- Simplified internal application resource fetching with direct type assertions.
+- Refactored configuration and context usage in serve and HTTPS commands to reduce error handling noise.
+- Enhanced truststore installers by modularizing platform-specific logic and removing deprecated macOS/Linux installers.
+- Cleaned up proxy route and serve command tests by removing obsolete test files for better maintainability.
+
+### Bug Fixes 🐛
+- Ensured removal errors in HTTPS uninstall commands no longer block operation by ignoring individual removal failures.
+- Fixed test suite consistency by removing legacy and broken tests related to HTTPS commands and proxy routes.
+
+### Testing 🧪
+- Replaced previous mixed unit and integration tests with an exclusive integration testing approach.
+- Added comprehensive full coverage integration test suite verifying browse handler and global HTTP interactions.
+- Updated CI to run integration coverage gate to ensure subprocess coverage enforcement.
+
+### Docs 📚
+- Updated README to clarify the `--browse` flag behavior with explicit examples.
+- Added new issue documentation describing integration-only coverage suite implementation and validation steps.
+- Cleaned Makefile and CI-related documentation reflecting current test strategy changes.
+
 ## v0.4.3 — 2026-02-19
 
 ### Features ✨
