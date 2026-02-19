@@ -42,6 +42,37 @@ Add a `GHTTP_CONFIG_FILE` environment variable counterpart to the `--config` fla
 
 Normalize `GHTTP_SERVE_PROXIES` so comma-delimited values are split into individual mappings for the proxy route parser.
 
+### 302: Browse mode cannot open index.html from directory listing
+**Status:** Unresolved
+
+When running `ghttp --browse`, clicking `index.html` from the rendered directory listing redirects to `./` instead of returning the file content.
+
+Observed behavior:
+- `GET /` returns directory listing in browse mode (expected)
+- `GET /index.html` returns `301 Location: ./` (unexpected for direct file navigation from listing link)
+
+Repro:
+- Create a directory with `index.html`
+- Run `ghttp --directory <dir> --browse`
+- Open `/<index.html>` from listing or request it directly
+- Observe redirect loop back to root listing
+
+Likely cause:
+- Handler chain delegates direct file requests to `http.FileServer`, which canonicalizes `/index.html` to `/` by redirect.
+- Browse listing currently emits direct `index.html` links, so users cannot view that file in browse mode.
+
+Expected:
+- In `--browse` mode, direct file request from listing should render file content, including `index.html`, or listing should avoid emitting links that resolve into canonical redirect loops.
+
+### 303: Serve direct index files in browse mode without canonical redirect
+**Status:** Resolved
+
+Add browse-handler interception for direct requests to directory index file names (`index.html`, `index.htm`) so those requests are served as file content instead of being redirected to the directory listing by `http.FileServer`.
+
+Validation:
+- Added integration coverage for `GET /example/index.html` in browse mode to assert `200` response with direct file content and no `Location` redirect header.
+- Ran `go vet ./...` and `go test ./...`.
+
 ## Maintenance (400–499)
 
 ### 401: Remove manual HTTPS CLI workflow

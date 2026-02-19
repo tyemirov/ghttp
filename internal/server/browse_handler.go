@@ -2,6 +2,7 @@ package server
 
 import (
 	"html"
+	"io"
 	"io/fs"
 	"net/http"
 	pathpkg "path"
@@ -34,6 +35,10 @@ func newBrowseHandler(next http.Handler, fileSystem http.FileSystem) http.Handle
 }
 
 func (handler browseHandler) ServeHTTP(responseWriter http.ResponseWriter, request *http.Request) {
+	if handler.serveDirectDirectoryIndexRequest(responseWriter, request) {
+		return
+	}
+
 	if !strings.HasSuffix(request.URL.Path, "/") || request.URL.Path == "" {
 		handler.next.ServeHTTP(responseWriter, request)
 		return
@@ -59,6 +64,45 @@ func (handler browseHandler) ServeHTTP(responseWriter http.ResponseWriter, reque
 	}
 
 	handler.renderListing(responseWriter, request, entries)
+}
+
+func (handler browseHandler) serveDirectDirectoryIndexRequest(responseWriter http.ResponseWriter, request *http.Request) bool {
+	if request.URL.Path == "" || strings.HasSuffix(request.URL.Path, "/") {
+		return false
+	}
+
+	requestPathBase := pathpkg.Base(request.URL.Path)
+	if !isDirectoryIndexFileName(requestPathBase) {
+		return false
+	}
+
+	requestedFile, openErr := handler.fileSystem.Open(request.URL.Path)
+	if openErr != nil {
+		return false
+	}
+	defer requestedFile.Close()
+
+	requestedFileInfo, statErr := requestedFile.Stat()
+	if statErr != nil || requestedFileInfo.IsDir() {
+		return false
+	}
+
+	readSeeker, canSeek := requestedFile.(io.ReadSeeker)
+	if !canSeek {
+		return false
+	}
+
+	http.ServeContent(responseWriter, request, requestedFileInfo.Name(), requestedFileInfo.ModTime(), readSeeker)
+	return true
+}
+
+func isDirectoryIndexFileName(fileName string) bool {
+	for index := range directoryIndexCandidates {
+		if strings.EqualFold(fileName, directoryIndexCandidates[index]) {
+			return true
+		}
+	}
+	return false
 }
 
 func (handler browseHandler) renderListing(responseWriter http.ResponseWriter, request *http.Request, entries []fs.FileInfo) {
