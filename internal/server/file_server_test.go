@@ -223,32 +223,43 @@ func TestIntegrationFileServerBrowseModeRendersMarkdownOnDirectRequest(t *testin
 	}
 }
 
-func TestIntegrationFileServerBrowseModeServesIndexHtmlOnDirectRequest(t *testing.T) {
+func TestIntegrationFileServerBrowseModeServesHtmlOnDirectRequest(t *testing.T) {
 	temporaryDirectory := t.TempDir()
 	exampleDirectory := filepath.Join(temporaryDirectory, "example")
 	mustMkDir(t, exampleDirectory)
-	writeFile(t, filepath.Join(exampleDirectory, "index.html"), "<html><body>Direct index</body></html>")
+	writeFile(t, filepath.Join(exampleDirectory, "index.html"), "<html><body>Index page</body></html>")
+	writeFile(t, filepath.Join(exampleDirectory, "hello.html"), "<html><body>Hello page</body></html>")
 
 	handler := newTestFileServerHandler(temporaryDirectory, true, false, true, "")
 
-	recorder := httptest.NewRecorder()
-	request := httptest.NewRequest(http.MethodGet, "/example/index.html", nil)
+	testCases := []struct {
+		requestPath  string
+		expectedText string
+	}{
+		{requestPath: "/example/index.html", expectedText: "Index page"},
+		{requestPath: "/example/hello.html", expectedText: "Hello page"},
+	}
 
-	handler.ServeHTTP(recorder, request)
+	for _, testCase := range testCases {
+		recorder := httptest.NewRecorder()
+		request := httptest.NewRequest(http.MethodGet, testCase.requestPath, nil)
 
-	if recorder.Code != http.StatusOK {
-		t.Fatalf("expected 200 status, got %d", recorder.Code)
-	}
-	if recorder.Header().Get("Location") != "" {
-		t.Fatalf("expected direct file content without redirect, got Location %q", recorder.Header().Get("Location"))
-	}
-	bodyBytes, readErr := io.ReadAll(recorder.Result().Body)
-	if readErr != nil {
-		t.Fatalf("read body: %v", readErr)
-	}
-	responseBody := string(bodyBytes)
-	if !strings.Contains(responseBody, "Direct index") {
-		t.Fatalf("expected direct index content, body: %s", responseBody)
+		handler.ServeHTTP(recorder, request)
+
+		if recorder.Code != http.StatusOK {
+			t.Fatalf("request %s expected 200 status, got %d", testCase.requestPath, recorder.Code)
+		}
+		if recorder.Header().Get("Location") != "" {
+			t.Fatalf("request %s expected direct file content without redirect, got Location %q", testCase.requestPath, recorder.Header().Get("Location"))
+		}
+		bodyBytes, readErr := io.ReadAll(recorder.Result().Body)
+		if readErr != nil {
+			t.Fatalf("request %s read body: %v", testCase.requestPath, readErr)
+		}
+		responseBody := string(bodyBytes)
+		if !strings.Contains(responseBody, testCase.expectedText) {
+			t.Fatalf("request %s expected content %q, body: %s", testCase.requestPath, testCase.expectedText, responseBody)
+		}
 	}
 }
 

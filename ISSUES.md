@@ -73,6 +73,16 @@ Validation:
 - Added integration coverage for `GET /example/index.html` in browse mode to assert `200` response with direct file content and no `Location` redirect header.
 - Ran `go vet ./...` and `go test ./...`.
 
+### 304: Generalize browse-mode direct file serving semantics
+**Status:** Resolved
+
+Remove index-specific browse interception and serve direct non-directory file requests uniformly in browse mode, while continuing to delegate Markdown files so `.md` rendering behavior remains unchanged.
+
+Validation:
+- Replaced targeted index-only test with table-driven coverage for both `/example/index.html` and `/example/hello.html` in browse mode.
+- Confirmed no redirect `Location` header for direct HTML file requests.
+- Ran `go vet ./...` and `go test ./...`.
+
 ## Maintenance (400–499)
 
 ### 401: Remove manual HTTPS CLI workflow

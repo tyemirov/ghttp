@@ -35,7 +35,7 @@ func newBrowseHandler(next http.Handler, fileSystem http.FileSystem) http.Handle
 }
 
 func (handler browseHandler) ServeHTTP(responseWriter http.ResponseWriter, request *http.Request) {
-	if handler.serveDirectDirectoryIndexRequest(responseWriter, request) {
+	if handler.serveDirectFileRequest(responseWriter, request) {
 		return
 	}
 
@@ -66,13 +66,8 @@ func (handler browseHandler) ServeHTTP(responseWriter http.ResponseWriter, reque
 	handler.renderListing(responseWriter, request, entries)
 }
 
-func (handler browseHandler) serveDirectDirectoryIndexRequest(responseWriter http.ResponseWriter, request *http.Request) bool {
+func (handler browseHandler) serveDirectFileRequest(responseWriter http.ResponseWriter, request *http.Request) bool {
 	if request.URL.Path == "" || strings.HasSuffix(request.URL.Path, "/") {
-		return false
-	}
-
-	requestPathBase := pathpkg.Base(request.URL.Path)
-	if !isDirectoryIndexFileName(requestPathBase) {
 		return false
 	}
 
@@ -86,6 +81,9 @@ func (handler browseHandler) serveDirectDirectoryIndexRequest(responseWriter htt
 	if statErr != nil || requestedFileInfo.IsDir() {
 		return false
 	}
+	if isMarkdownFile(requestedFileInfo.Name()) {
+		return false
+	}
 
 	readSeeker, canSeek := requestedFile.(io.ReadSeeker)
 	if !canSeek {
@@ -94,15 +92,6 @@ func (handler browseHandler) serveDirectDirectoryIndexRequest(responseWriter htt
 
 	http.ServeContent(responseWriter, request, requestedFileInfo.Name(), requestedFileInfo.ModTime(), readSeeker)
 	return true
-}
-
-func isDirectoryIndexFileName(fileName string) bool {
-	for index := range directoryIndexCandidates {
-		if strings.EqualFold(fileName, directoryIndexCandidates[index]) {
-			return true
-		}
-	}
-	return false
 }
 
 func (handler browseHandler) renderListing(responseWriter http.ResponseWriter, request *http.Request, entries []fs.FileInfo) {
