@@ -500,3 +500,25 @@ func containsStatusCode(expectedStatusCodes []int, statusCode int) bool {
 	}
 	return false
 }
+
+func getRepositoryRoot(testingT *testing.T) string {
+	testingT.Helper()
+
+	currentDirectory, directoryError := os.Getwd()
+	if directoryError != nil {
+		testingT.Fatalf("resolve working directory: %v", directoryError)
+	}
+
+	for {
+		dockerfilePath := filepath.Join(currentDirectory, "Dockerfile")
+		if _, statError := os.Stat(dockerfilePath); statError == nil {
+			return currentDirectory
+		}
+
+		parentDirectory := filepath.Dir(currentDirectory)
+		if parentDirectory == currentDirectory {
+			testingT.Fatal("could not locate repository root")
+		}
+		currentDirectory = parentDirectory
+	}
+}
