@@ -35,6 +35,22 @@ Add repeatable proxy mappings with explicit from/to semantics (`--proxy /api=htt
 
 Add a `GHTTP_CONFIG_FILE` environment variable counterpart to the `--config` flag so the configuration file path can be set via environment.
 
+### 202: Route-level cache and streaming controls for SPA + API proxy deployments
+**Status:** Unresolved
+
+Enable first-class response policy controls so ghttp can replace nginx for single-origin SPA + API proxy setups without stale asset/UI behavior or stream buffering regressions.
+
+Required controls:
+- Route-scoped response headers for static paths and HTML shell paths.
+- Explicit `Cache-Control` policies per route group (for example, `no-store` for `index.html`/app shell and revalidation policy for static assets).
+- Proxy route streaming controls for long-lived responses (SSE/chunked) so proxying does not introduce buffering delays.
+
+Acceptance criteria:
+- Config supports declaring header/caching policy by route pattern.
+- HTML shell routes can be configured to always return `Cache-Control: no-store`.
+- Static asset routes can be configured independently from HTML shell routes.
+- Proxied streaming endpoints deliver events/chunks without additional buffering delay introduced by ghttp.
+
 ## BugFixes (300–399)
 
 ### 301: Parse comma-delimited proxy mappings in env
