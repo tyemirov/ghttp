@@ -21,36 +21,38 @@ const (
 )
 
 type proxyHandler struct {
-	next   http.Handler
-	routes []proxyRouteHandler
+	next                   http.Handler
+	routes                 []proxyRouteHandler
+	proxyStreamingPolicies ProxyStreamingPolicies
 }
 
 type proxyRouteHandler struct {
-	pathPrefix string
-	backendURL *url.URL
-	httpProxy  *httputil.ReverseProxy
+	pathPrefix      string
+	backendURL      *url.URL
+	defaultProxy    *httputil.ReverseProxy
+	unbufferedProxy *httputil.ReverseProxy
 }
 
-func newProxyHandler(next http.Handler, proxyRoutes ProxyRoutes) http.Handler {
+func newProxyHandler(next http.Handler, proxyRoutes ProxyRoutes, proxyStreamingPolicies ProxyStreamingPolicies) http.Handler {
 	routeHandlers := make([]proxyRouteHandler, 0, len(proxyRoutes.routes))
 	for _, route := range proxyRoutes.routes {
 		routeHandlers = append(routeHandlers, newProxyRouteHandler(route))
 	}
 	return &proxyHandler{
-		next:   next,
-		routes: routeHandlers,
+		next:                   next,
+		routes:                 routeHandlers,
+		proxyStreamingPolicies: proxyStreamingPolicies,
 	}
 }
 
 func newProxyRouteHandler(route proxyRoute) proxyRouteHandler {
-	reverseProxy := httputil.NewSingleHostReverseProxy(route.backendURL)
-	reverseProxy.ErrorHandler = func(responseWriter http.ResponseWriter, request *http.Request, err error) {
-		http.Error(responseWriter, "Bad Gateway: "+err.Error(), http.StatusBadGateway)
-	}
+	defaultProxy := newRouteReverseProxy(route.backendURL, 0)
+	unbufferedProxy := newRouteReverseProxy(route.backendURL, -1)
 	return proxyRouteHandler{
-		pathPrefix: route.pathPrefix,
-		backendURL: route.backendURL,
-		httpProxy:  reverseProxy,
+		pathPrefix:      route.pathPrefix,
+		backendURL:      route.backendURL,
+		defaultProxy:    defaultProxy,
+		unbufferedProxy: unbufferedProxy,
 	}
 }
 
@@ -66,7 +68,7 @@ func (handler *proxyHandler) ServeHTTP(responseWriter http.ResponseWriter, reque
 		return
 	}
 
-	routeHandler.httpProxy.ServeHTTP(responseWriter, request)
+	routeHandler.resolveHTTPProxy(request.URL.Path, handler.proxyStreamingPolicies).ServeHTTP(responseWriter, request)
 }
 
 func (handler *proxyHandler) matchRoute(requestPath string) (*proxyRouteHandler, bool) {
@@ -83,6 +85,13 @@ func (routeHandler *proxyRouteHandler) isWebSocketUpgrade(request *http.Request)
 	connectionHeader := strings.ToLower(request.Header.Get(headerConnection))
 	upgradeHeader := strings.ToLower(request.Header.Get(headerUpgrade))
 	return strings.Contains(connectionHeader, valueUpgrade) && upgradeHeader == valueWebSocket
+}
+
+func (routeHandler *proxyRouteHandler) resolveHTTPProxy(requestPath string, streamingPolicies ProxyStreamingPolicies) *httputil.ReverseProxy {
+	if streamingPolicies.IsUnbuffered(requestPath) {
+		return routeHandler.unbufferedProxy
+	}
+	return routeHandler.defaultProxy
 }
 
 func (routeHandler *proxyRouteHandler) handleWebSocket(responseWriter http.ResponseWriter, request *http.Request) {
@@ -192,4 +201,13 @@ func hostWithoutPort(hostPort string) string {
 		return hostPort
 	}
 	return host
+}
+
+func newRouteReverseProxy(backendURL *url.URL, flushInterval time.Duration) *httputil.ReverseProxy {
+	reverseProxy := httputil.NewSingleHostReverseProxy(backendURL)
+	reverseProxy.FlushInterval = flushInterval
+	reverseProxy.ErrorHandler = func(responseWriter http.ResponseWriter, request *http.Request, err error) {
+		http.Error(responseWriter, "Bad Gateway: "+err.Error(), http.StatusBadGateway)
+	}
+	return reverseProxy
 }

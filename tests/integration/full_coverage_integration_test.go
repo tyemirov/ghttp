@@ -19,6 +19,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"runtime"
 	"strconv"
 	"strings"
 	"testing"
@@ -160,6 +161,30 @@ func TestGlobalIntegrationCoverageGate(t *testing.T) {
 		repositoryRoot,
 		instrumentedCommandBinary,
 		[]string{"8080", "--directory", fixture.siteDirectory, "--proxy", "/api=http://a", "--proxy", "/api=http://b"},
+		coverageEnvironment,
+		1,
+	)
+	runCommandExpectExitCode(
+		t,
+		repositoryRoot,
+		instrumentedCommandBinary,
+		[]string{"8080", "--directory", fixture.siteDirectory, "--response-header", "/api"},
+		coverageEnvironment,
+		1,
+	)
+	runCommandExpectExitCode(
+		t,
+		repositoryRoot,
+		instrumentedCommandBinary,
+		[]string{"8080", "--directory", fixture.siteDirectory, "--response-header", "/api=Cache-Control"},
+		coverageEnvironment,
+		1,
+	)
+	runCommandExpectExitCode(
+		t,
+		repositoryRoot,
+		instrumentedCommandBinary,
+		[]string{"8080", "--directory", fixture.siteDirectory, "--proxy-streaming", "/api=invalid"},
 		coverageEnvironment,
 		1,
 	)
@@ -520,6 +545,34 @@ func exerciseStandardHTTPServerFlows(testingT *testing.T, repositoryRoot string,
 	if stopErr := jsonServer.stop(); stopErr != nil {
 		testingT.Fatalf("stop json/http1.0 server: %v", stopErr)
 	}
+
+	responsePolicyPort := allocateFreePort(testingT)
+	responsePolicyBaseURL := fmt.Sprintf("http://127.0.0.1:%d", responsePolicyPort)
+	responsePolicyServer := startGHTTPProcessWithArguments(
+		testingT,
+		repositoryRoot,
+		binaryPath,
+		[]string{
+			strconv.Itoa(responsePolicyPort),
+			"--directory", siteDirectory,
+			"--response-header", "/=Cache-Control:no-store",
+			"--response-header", "/hello=Cache-Control:public, max-age=600",
+		},
+		map[string]string{"GOCOVERDIR": coverageDirectoryPath},
+		responsePolicyBaseURL+"/hello.html",
+		false,
+	)
+	_, indexHeaders, _ := executeHTTPGet(testingT, &http.Client{Timeout: browseModeRequestTimeout}, responsePolicyBaseURL, "/index.html")
+	if indexHeaders.Get("Cache-Control") != "no-store" {
+		testingT.Fatalf("expected route response policy no-store for index.html, got %q", indexHeaders.Get("Cache-Control"))
+	}
+	_, helloHeaders, _ := executeHTTPGet(testingT, &http.Client{Timeout: browseModeRequestTimeout}, responsePolicyBaseURL, "/hello.html")
+	if helloHeaders.Get("Cache-Control") != "public, max-age=600" {
+		testingT.Fatalf("expected route response policy override for hello.html, got %q", helloHeaders.Get("Cache-Control"))
+	}
+	if stopErr := responsePolicyServer.stop(); stopErr != nil {
+		testingT.Fatalf("stop response policy server: %v", stopErr)
+	}
 }
 
 func exerciseInitialFileFlow(testingT *testing.T, repositoryRoot string, binaryPath string, landingFilePath string, coverageDirectoryPath string) {
@@ -576,6 +629,7 @@ func exerciseHTTPProxyFlows(testingT *testing.T, repositoryRoot string, binaryPa
 			strconv.Itoa(proxyPort),
 			"--directory", siteDirectory,
 			"--proxy", "/api=http://" + backendListener.Addr().String() + ", /svc=http://" + backendListener.Addr().String(),
+			"--proxy-streaming", "/api=unbuffered,/svc=buffered",
 		},
 		map[string]string{"GOCOVERDIR": coverageDirectoryPath},
 		proxyBaseURL+"/",
@@ -925,7 +979,7 @@ func exerciseAddressInUseFlow(testingT *testing.T, repositoryRoot string, binary
 		testingT,
 		repositoryRoot,
 		binaryPath,
-		[]string{strconv.Itoa(occupiedPort), "--directory", siteDirectory},
+		[]string{strconv.Itoa(occupiedPort), "--directory", siteDirectory, "--bind", "127.0.0.1"},
 		map[string]string{"GOCOVERDIR": coverageDirectoryPath},
 		1,
 	)
@@ -943,11 +997,13 @@ func createFakeSystemTools(testingT *testing.T) fakeSystemTools {
 		testingT.Fatalf("create trust-and-certutil directory: %v", makeErr)
 	}
 
-	trustScript := "#!/usr/bin/env bash\nset -euo pipefail\nif [ \"${GHTTP_TEST_TRUST_LOG_FILE:-}\" != \"\" ]; then\n  echo \"$*\" >> \"${GHTTP_TEST_TRUST_LOG_FILE}\"\nfi\nif [ \"${GHTTP_TEST_TRUST_FAIL_ALL:-0}\" = \"1\" ]; then\n  exit 1\nfi\nif [ \"${GHTTP_TEST_TRUST_FAIL_REMOVE:-0}\" = \"1\" ] && [ \"${2:-}\" = \"--remove\" ]; then\n  exit 1\nfi\nexit 0\n"
+	trustScript := "#!/usr/bin/env bash\nset -euo pipefail\nif [ \"${GHTTP_TEST_TRUST_LOG_FILE:-}\" != \"\" ]; then\n  echo \"$*\" >> \"${GHTTP_TEST_TRUST_LOG_FILE}\"\nfi\nif [ \"${GHTTP_TEST_TRUST_FAIL_ALL:-0}\" = \"1\" ]; then\n  exit 1\nfi\nif [ \"${GHTTP_TEST_TRUST_FAIL_REMOVE:-0}\" = \"1\" ] && [ \"${2:-}\" = \"--remove\" ]; then\n  exit 1\nfi\nif [ \"${GHTTP_TEST_TRUST_FAIL_REMOVE:-0}\" = \"1\" ] && [ \"${1:-}\" = \"delete-certificate\" ]; then\n  exit 1\nfi\nexit 0\n"
 	certutilScript := "#!/usr/bin/env bash\nset -euo pipefail\nif [ \"${GHTTP_TEST_CERTUTIL_FAIL:-0}\" = \"1\" ]; then\n  exit 1\nfi\nexit 0\n"
 
 	writeExecutableScript(testingT, filepath.Join(trustOnlyDirectory, "trust"), trustScript)
 	writeExecutableScript(testingT, filepath.Join(trustAndCertutilDirectory, "trust"), trustScript)
+	writeExecutableScript(testingT, filepath.Join(trustOnlyDirectory, "security"), trustScript)
+	writeExecutableScript(testingT, filepath.Join(trustAndCertutilDirectory, "security"), trustScript)
 	writeExecutableScript(testingT, filepath.Join(trustAndCertutilDirectory, "certutil"), certutilScript)
 
 	return fakeSystemTools{
@@ -968,7 +1024,7 @@ func writeExecutableScript(testingT *testing.T, scriptPath string, scriptContent
 func exerciseDynamicHTTPSFlows(testingT *testing.T, repositoryRoot string, binaryPath string, siteDirectory string, coverageDirectoryPath string, tools fakeSystemTools) {
 	testingT.Helper()
 	homeDirectory := testingT.TempDir()
-	firefoxProfileDirectory := filepath.Join(homeDirectory, ".mozilla", "firefox", "profile.default")
+	firefoxProfileDirectory := resolveFirefoxProfileDirectory(homeDirectory)
 	if makeErr := os.MkdirAll(firefoxProfileDirectory, 0o755); makeErr != nil {
 		testingT.Fatalf("create firefox profile directory: %v", makeErr)
 	}
@@ -1225,6 +1281,17 @@ func exerciseDynamicHTTPSFlows(testingT *testing.T, repositoryRoot string, binar
 
 	if _, statErr := os.Stat(filepath.Join(firefoxProfileDirectory, "user.js")); statErr != nil {
 		testingT.Fatalf("expected firefox preference file to be created by fallback integration: %v", statErr)
+	}
+}
+
+func resolveFirefoxProfileDirectory(homeDirectory string) string {
+	switch runtime.GOOS {
+	case "darwin":
+		return filepath.Join(homeDirectory, "Library", "Application Support", "Firefox", "Profiles", "profile.default")
+	case "windows":
+		return filepath.Join(homeDirectory, "AppData", "Roaming", "Mozilla", "Firefox", "Profiles", "profile.default")
+	default:
+		return filepath.Join(homeDirectory, ".mozilla", "firefox", "profile.default")
 	}
 }
 

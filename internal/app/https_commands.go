@@ -109,6 +109,8 @@ func executeHTTPSServe(cmd *cobra.Command, resources *applicationResources, serv
 		InitialFileRelativePath: serveConfiguration.InitialFileRelativePath,
 		LoggingType:             serveConfiguration.LoggingType,
 		ProxyRoutes:             serveConfiguration.ProxyRoutes,
+		RouteResponsePolicies:   serveConfiguration.RouteResponsePolicies,
+		ProxyStreamingPolicies:  serveConfiguration.ProxyStreamingPolicies,
 		TLS: &server.TLSConfiguration{
 			LoadedCertificate: &tlsCertificate,
 		},
