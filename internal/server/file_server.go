@@ -315,6 +315,17 @@ func (recorder *statusRecorder) Write(content []byte) (int, error) {
 	return written, err
 }
 
+func (recorder *statusRecorder) Flush() {
+	responseFlusher, supportsFlush := recorder.ResponseWriter.(http.Flusher)
+	if supportsFlush {
+		responseFlusher.Flush()
+	}
+}
+
+func (recorder *statusRecorder) Unwrap() http.ResponseWriter {
+	return recorder.ResponseWriter
+}
+
 // Hijack implements http.Hijacker to support WebSocket connections through the logging middleware.
 func (recorder *statusRecorder) Hijack() (net.Conn, *bufio.ReadWriter, error) {
 	return recorder.ResponseWriter.(http.Hijacker).Hijack()

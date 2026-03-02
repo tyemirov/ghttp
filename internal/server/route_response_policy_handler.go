@@ -61,6 +61,10 @@ func (writer *responsePolicyWriter) Hijack() (net.Conn, *bufio.ReadWriter, error
 	return responseHijacker.Hijack()
 }
 
+func (writer *responsePolicyWriter) Unwrap() http.ResponseWriter {
+	return writer.ResponseWriter
+}
+
 func (writer *responsePolicyWriter) applyHeaders() {
 	if writer.applied {
 		return
