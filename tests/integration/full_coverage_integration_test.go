@@ -573,6 +573,31 @@ func exerciseStandardHTTPServerFlows(testingT *testing.T, repositoryRoot string,
 	if stopErr := responsePolicyServer.stop(); stopErr != nil {
 		testingT.Fatalf("stop response policy server: %v", stopErr)
 	}
+
+	envResponsePolicyPort := allocateFreePort(testingT)
+	envResponsePolicyBaseURL := fmt.Sprintf("http://127.0.0.1:%d", envResponsePolicyPort)
+	envResponsePolicyServer := startGHTTPProcessWithArguments(
+		testingT,
+		repositoryRoot,
+		binaryPath,
+		[]string{
+			strconv.Itoa(envResponsePolicyPort),
+			"--directory", siteDirectory,
+		},
+		map[string]string{
+			"GOCOVERDIR":                   coverageDirectoryPath,
+			"GHTTP_SERVE_RESPONSE_HEADERS": "/=Cache-Control:public, max-age=600",
+		},
+		envResponsePolicyBaseURL+"/index.html",
+		false,
+	)
+	_, envPolicyHeaders, _ := executeHTTPGet(testingT, &http.Client{Timeout: browseModeRequestTimeout}, envResponsePolicyBaseURL, "/index.html")
+	if envPolicyHeaders.Get("Cache-Control") != "public, max-age=600" {
+		testingT.Fatalf("expected env response header policy for index.html, got %q", envPolicyHeaders.Get("Cache-Control"))
+	}
+	if stopErr := envResponsePolicyServer.stop(); stopErr != nil {
+		testingT.Fatalf("stop env response policy server: %v", stopErr)
+	}
 }
 
 func exerciseInitialFileFlow(testingT *testing.T, repositoryRoot string, binaryPath string, landingFilePath string, coverageDirectoryPath string) {
@@ -645,6 +670,79 @@ func exerciseHTTPProxyFlows(testingT *testing.T, repositoryRoot string, binaryPa
 	}
 	if stopErr := proxyServer.stop(); stopErr != nil {
 		testingT.Fatalf("stop proxy server: %v", stopErr)
+	}
+
+	streamingBackendServer := &http.Server{}
+	streamingBackendListener, streamingListenErr := net.Listen("tcp", "127.0.0.1:0")
+	if streamingListenErr != nil {
+		testingT.Fatalf("start streaming backend listener: %v", streamingListenErr)
+	}
+	streamingBackendServer.Handler = http.HandlerFunc(func(responseWriter http.ResponseWriter, request *http.Request) {
+		if request.URL.Path != "/events/stream" {
+			responseWriter.WriteHeader(http.StatusNotFound)
+			return
+		}
+		responseWriter.Header().Set("Content-Type", "text/event-stream")
+		responseFlusher, supportsFlush := responseWriter.(http.Flusher)
+		if !supportsFlush {
+			responseWriter.WriteHeader(http.StatusInternalServerError)
+			return
+		}
+		_, _ = io.WriteString(responseWriter, "data: first\n\n")
+		responseFlusher.Flush()
+		time.Sleep(2 * time.Second)
+		_, _ = io.WriteString(responseWriter, "data: second\n\n")
+		responseFlusher.Flush()
+	})
+	go func() {
+		_ = streamingBackendServer.Serve(streamingBackendListener)
+	}()
+	testingT.Cleanup(func() {
+		_ = streamingBackendServer.Shutdown(context.Background())
+	})
+
+	streamingProxyPort := allocateFreePort(testingT)
+	streamingProxyBaseURL := fmt.Sprintf("http://127.0.0.1:%d", streamingProxyPort)
+	streamingProxyServer := startGHTTPProcessWithArguments(
+		testingT,
+		repositoryRoot,
+		binaryPath,
+		[]string{
+			strconv.Itoa(streamingProxyPort),
+			"--directory", siteDirectory,
+			"--proxy", "/events=http://" + streamingBackendListener.Addr().String(),
+			"--proxy-streaming", "/events=unbuffered",
+			"--response-header", "/events=Cache-Control:no-store",
+			"--logging-type", "JSON",
+		},
+		map[string]string{"GOCOVERDIR": coverageDirectoryPath},
+		streamingProxyBaseURL+"/",
+		false,
+	)
+
+	streamingStart := time.Now()
+	streamingResponse, requestErr := (&http.Client{Timeout: 5 * time.Second}).Get(streamingProxyBaseURL + "/events/stream")
+	if requestErr != nil {
+		testingT.Fatalf("request streaming proxy endpoint: %v", requestErr)
+	}
+	streamingReader := bufio.NewReader(streamingResponse.Body)
+	firstStreamLine, readErr := streamingReader.ReadString('\n')
+	_ = streamingResponse.Body.Close()
+	if readErr != nil {
+		testingT.Fatalf("read first streaming line: %v", readErr)
+	}
+	if strings.TrimSpace(firstStreamLine) != "data: first" {
+		testingT.Fatalf("expected first streamed line, got %q", firstStreamLine)
+	}
+	if streamingResponse.Header.Get("Cache-Control") != "no-store" {
+		testingT.Fatalf("expected streaming response cache policy, got %q", streamingResponse.Header.Get("Cache-Control"))
+	}
+	firstLineDuration := time.Since(streamingStart)
+	if firstLineDuration > 1500*time.Millisecond {
+		testingT.Fatalf("expected unbuffered streaming to deliver first event quickly, got first line in %s", firstLineDuration)
+	}
+	if stopErr := streamingProxyServer.stop(); stopErr != nil {
+		testingT.Fatalf("stop streaming proxy server: %v", stopErr)
 	}
 
 	legacyProxyPort := allocateFreePort(testingT)
