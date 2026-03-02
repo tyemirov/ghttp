@@ -1,5 +1,35 @@
 # Changelog
 
+## v0.5.1 - 2026-03-01
+
+### Features ✨
+- Implement route response policies for per-path response header control.
+- Add proxy streaming controls per route for flush behavior configuration.
+- Add repeatable proxy mappings with explicit from-to semantics.
+
+### Improvements ⚙️
+- Move regression coverage to integration suite only.
+- Update ISSUES.md with current open backlog.
+- CI triggers Docker publish only on tags and manual dispatch.
+- Add detailed ARCHITECTURE.md describing runtime and subsystems.
+- Generalize browse mode to serve direct files without redirect loops.
+- Add environment variable support for config file path.
+- Add integration-only process coverage for browse, HTTP(S), proxy, and WebSocket flows.
+- Update README with meaningful recent changes and new config options.
+
+### Bug Fixes 🐛
+- Fix proxy flush passthrough logic and environment parsing for response-header.
+- Fix browse mode to serve direct index files and other files without canonical redirect loops.
+
+### Testing 🧪
+- Move regression coverage tests exclusively to integration suite.
+- Enhance integration test coverage for browse mode and proxy streaming.
+
+### Docs 📚
+- Add comprehensive ARCHITECTURE.md explaining internal design and request pipeline.
+- Revise README.md for new features, flags, environment variables, and architecture reference.
+- Update ISSUES.md to reflect current open issues with response-cache and stream delivery controls.
+
 ## v0.5.0 — 2026-02-19
 
 ### Features ✨
