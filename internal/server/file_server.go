@@ -58,6 +58,8 @@ type FileServerConfiguration struct {
 	LoggingType             string
 	TLS                     *TLSConfiguration
 	ProxyRoutes             ProxyRoutes
+	RouteResponsePolicies   RouteResponsePolicies
+	ProxyStreamingPolicies  ProxyStreamingPolicies
 }
 
 // TLSConfiguration describes transport layer security configuration.
@@ -87,6 +89,9 @@ func (fileServer FileServer) Serve(ctx context.Context, configuration FileServer
 	displayAddress := fileServer.servingAddressFormatter.FormatHostAndPortForLogging(configuration.BindAddress, configuration.Port)
 	fileHandler := fileServer.buildFileHandler(configuration)
 	wrappedHandler := fileServer.wrapWithHeaders(fileHandler, configuration.ProtocolVersion)
+	if !configuration.RouteResponsePolicies.IsEmpty() {
+		wrappedHandler = newRouteResponsePolicyHandler(wrappedHandler, configuration.RouteResponsePolicies)
+	}
 	loggingType := fileServer.loggingService.Type()
 	if configuration.LoggingType != "" {
 		loggingType = configuration.LoggingType
@@ -188,7 +193,7 @@ func (fileServer FileServer) buildFileHandler(configuration FileServerConfigurat
 		handler = newInitialFileHandler(handler, configuration.InitialFileRelativePath)
 	}
 	if !configuration.ProxyRoutes.IsEmpty() {
-		handler = newProxyHandler(handler, configuration.ProxyRoutes)
+		handler = newProxyHandler(handler, configuration.ProxyRoutes, configuration.ProxyStreamingPolicies)
 	}
 	return handler
 }
@@ -308,6 +313,17 @@ func (recorder *statusRecorder) Write(content []byte) (int, error) {
 	written, err := recorder.ResponseWriter.Write(content)
 	recorder.bytesWritten += written
 	return written, err
+}
+
+func (recorder *statusRecorder) Flush() {
+	responseFlusher, supportsFlush := recorder.ResponseWriter.(http.Flusher)
+	if supportsFlush {
+		responseFlusher.Flush()
+	}
+}
+
+func (recorder *statusRecorder) Unwrap() http.ResponseWriter {
+	return recorder.ResponseWriter
 }
 
 // Hijack implements http.Hijacker to support WebSocket connections through the logging middleware.

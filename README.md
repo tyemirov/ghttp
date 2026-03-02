@@ -2,9 +2,18 @@
 
 [![GitHub release](https://img.shields.io/github/release/tyemirov/ghttp.svg)](https://github.com/tyemirov/ghttp/releases)
 
-gHTTP is a Go-powered file server that mirrors the ergonomics of `python -m http.server`, adds structured zap-based request logging, renders mardown files as HTML, and provisions self-signed HTTPS certificates for local development.
+gHTTP is a Go-powered file server that mirrors the ergonomics of `python -m http.server`, adds structured zap-based request logging, renders markdown files as HTML, and provisions self-signed HTTPS certificates for local development.
 
 *gHTTP is fast.*
+
+## Meaningful recent changes
+- Reverse proxy routing now supports repeatable explicit mappings via `--proxy /from=http://backend` and `GHTTP_SERVE_PROXIES` (including comma-delimited env values).
+- WebSocket upgrade traffic is proxied alongside standard HTTP proxy traffic.
+- Route-scoped response header policies are supported via `--response-header` / `GHTTP_SERVE_RESPONSE_HEADERS` (for example, per-path `Cache-Control` strategies for HTML shell vs static assets).
+- Proxy streaming behavior is configurable per route via `--proxy-streaming` / `GHTTP_SERVE_PROXY_STREAMING` to force unbuffered forwarding for SSE/chunked endpoints.
+- Browse mode now serves direct non-directory file requests (including `index.html`) without canonical redirect loops, while keeping Markdown rendering behavior intact.
+- The config path can be set via `GHTTP_CONFIG_FILE` as an environment equivalent of `--config`.
+- CI now includes integration-only process coverage for browse, HTTP/HTTPS, reverse proxy, and WebSocket runtime paths.
 
 ## Installation
 
@@ -62,6 +71,8 @@ After installation the `ghttp` binary is placed in `$GOBIN` (or `$GOPATH/bin`). 
 * Render Markdown files (`*.md`) to HTML automatically, treat `README.md` as a directory landing page, and skip the feature entirely with `--no-md` or `serve.no_markdown: true` in configuration.
 * When Firefox is installed, automatically configure its profiles to trust the generated certificates so browser warnings disappear on the next restart.
 * Suppress automatic directory listings by exporting `GHTTPD_DISABLE_DIR_INDEX=1`; the handler returns HTTP 403 for directory roots.
+* Apply route-scoped response headers (including `Cache-Control`) with repeatable `--response-header /path=Header-Name:Header-Value` mappings.
+* Configure proxy streaming mode per route using `--proxy-streaming /path=unbuffered|buffered` to control proxy flush behavior.
 * Configure every flag via `~/.config/ghttp/config.yaml` or environment variables prefixed with `GHTTP_` (for example, `GHTTP_SERVE_DIRECTORY=/srv/www`).
 
 ### Flags and environment variables
@@ -78,6 +89,8 @@ Flags map to Viper configuration keys. Environment variables use the `GHTTP_` pr
 | `--browse` | `GHTTP_SERVE_BROWSE` | Folder URLs always return a directory listing, even if index.html or README.md exists. Direct file requests are handled by the same normal file pipeline with no filename preference (including index files); Markdown requests still render when Markdown rendering is enabled. Example: `/` returns the listing, while `/index.html` returns the file content. Overrides `GHTTPD_DISABLE_DIR_INDEX`. |
 | `--logging-type` | `GHTTP_SERVE_LOGGING_TYPE` | CONSOLE or JSON. |
 | `--proxy` | `GHTTP_SERVE_PROXIES` | Enables reverse proxy. Repeatable from=to mapping (for example, `/api=http://backend:8081`); backend can be `http://` or `https://` regardless of frontend scheme; env uses comma-separated list. |
+| `--response-header` | `GHTTP_SERVE_RESPONSE_HEADERS` | Route-scoped response header mapping in the form `/path=Header-Name:Header-Value` (repeatable). Use this for explicit cache policies such as `/=Cache-Control:no-store` and `/assets/=Cache-Control:public, max-age=31536000, immutable`. |
+| `--proxy-streaming` | `GHTTP_SERVE_PROXY_STREAMING` | Route-scoped proxy streaming mode in the form `/path=unbuffered|buffered` (repeatable, comma-delimited env supported). |
 | `--proxy-path` | `GHTTP_SERVE_PROXY_PATH_PREFIX` | Legacy from-path prefix (for example, `/api`); requires `--proxy-backend`. |
 | `--proxy-backend` | `GHTTP_SERVE_PROXY_BACKEND` | Legacy to-backend URL (for example, `http://backend:8081`); requires `--proxy-path`. |
 | `--https` | `GHTTP_SERVE_HTTPS` | Enables self-signed HTTPS using the development certificate authority (SANs from `--https-host`); mutually exclusive with `--tls-cert` and `--tls-key`. |
@@ -113,6 +126,9 @@ so clients and intermediate caches decide their own policies.
 If you need custom caching semantics, wrap the file server handler with your own
 `http.Handler` that sets `Cache-Control`, `ETag`, or other headers before
 forwarding the request to the embedded `http.FileServer` instance.
+
+## Architecture
+See [ARCHITECTURE.md](./ARCHITECTURE.md) for the current runtime architecture, handler pipeline ordering, and subsystem boundaries.
 
 ## License
 This project is distributed under the terms of the [MIT License](./LICENSE).

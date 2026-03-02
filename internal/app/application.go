@@ -40,6 +40,8 @@ const (
 	flagNameLoggingType        = "logging-type"
 	flagNameHTTPSHosts         = "https-host"
 	flagNameProxy              = "proxy"
+	flagNameResponseHeader     = "response-header"
+	flagNameProxyStreaming     = "proxy-streaming"
 	flagNameProxyBackend       = "proxy-backend"
 	flagNameProxyPathPrefix    = "proxy-path"
 
@@ -57,6 +59,8 @@ const (
 	configKeyHTTPSCertificateDir     = "https.certificate_directory"
 	configKeyHTTPSHosts              = "https.hosts"
 	configKeyServeProxies            = "serve.proxies"
+	configKeyServeResponseHeaders    = "serve.response_headers"
+	configKeyServeProxyStreaming     = "serve.proxy_streaming"
 	configKeyProxyBackend            = "serve.proxy_backend"
 	configKeyProxyPathPrefix         = "serve.proxy_path_prefix"
 
@@ -122,6 +126,8 @@ func Execute(ctx context.Context, arguments []string) int {
 	configurationManager.SetDefault(configKeyHTTPSCertificateDir, filepath.Join(applicationConfigDir, certificates.DefaultCertificateDirectoryName))
 	configurationManager.SetDefault(configKeyHTTPSHosts, []string{"localhost", "127.0.0.1", "::1"})
 	configurationManager.SetDefault(configKeyServeProxies, []string{})
+	configurationManager.SetDefault(configKeyServeResponseHeaders, []string{})
+	configurationManager.SetDefault(configKeyServeProxyStreaming, []string{})
 	configurationManager.SetDefault(configKeyProxyBackend, "")
 	configurationManager.SetDefault(configKeyProxyPathPrefix, "")
 	resources := &applicationResources{

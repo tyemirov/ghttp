@@ -53,6 +53,8 @@ func configureServeFlags(flagSet *pflag.FlagSet, configurationManager *viper.Vip
 	flagSet.Bool(flagNameBrowse, configurationManager.GetBool(configKeyServeBrowse), "Browse directories without automatic rendering")
 	flagSet.String(flagNameLoggingType, configurationManager.GetString(configKeyServeLoggingType), "Logging type (CONSOLE or JSON)")
 	flagSet.StringSlice(flagNameProxy, configurationManager.GetStringSlice(configKeyServeProxies), "Proxy mapping in the form /from=http://backend:8081 (repeatable)")
+	flagSet.StringArray(flagNameResponseHeader, configurationManager.GetStringSlice(configKeyServeResponseHeaders), "Response header policy in the form /path=Header-Name:Header-Value (repeatable)")
+	flagSet.StringArray(flagNameProxyStreaming, configurationManager.GetStringSlice(configKeyServeProxyStreaming), "Proxy streaming policy in the form /path=unbuffered|buffered (repeatable)")
 	flagSet.String(flagNameProxyBackend, configurationManager.GetString(configKeyProxyBackend), "Backend URL to proxy requests to (e.g., http://backend:8001)")
 	flagSet.String(flagNameProxyPathPrefix, configurationManager.GetString(configKeyProxyPathPrefix), "Path prefix to proxy (e.g., /api/)")
 	_ = configurationManager.BindPFlag(configKeyServeBindAddress, flagSet.Lookup(flagNameBindAddress))
@@ -62,6 +64,8 @@ func configureServeFlags(flagSet *pflag.FlagSet, configurationManager *viper.Vip
 	_ = configurationManager.BindPFlag(configKeyServeBrowse, flagSet.Lookup(flagNameBrowse))
 	_ = configurationManager.BindPFlag(configKeyServeLoggingType, flagSet.Lookup(flagNameLoggingType))
 	_ = configurationManager.BindPFlag(configKeyServeProxies, flagSet.Lookup(flagNameProxy))
+	_ = configurationManager.BindPFlag(configKeyServeResponseHeaders, flagSet.Lookup(flagNameResponseHeader))
+	_ = configurationManager.BindPFlag(configKeyServeProxyStreaming, flagSet.Lookup(flagNameProxyStreaming))
 	_ = configurationManager.BindPFlag(configKeyProxyBackend, flagSet.Lookup(flagNameProxyBackend))
 	_ = configurationManager.BindPFlag(configKeyProxyPathPrefix, flagSet.Lookup(flagNameProxyPathPrefix))
 }
