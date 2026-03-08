@@ -70,7 +70,7 @@ After installation the `ghttp` binary is placed in `$GOBIN` (or `$GOPATH/bin`). 
 * Issue SAN-aware leaf certificates on demand whenever HTTPS is enabled, covering `localhost`, `127.0.0.1`, `::1`, and additional hosts supplied via repeated `--https-host` flags or Viper configuration.
 * Render Markdown files (`*.md`) to HTML automatically, treat `README.md` as a directory landing page, and skip the feature entirely with `--no-md` or `serve.no_markdown: true` in configuration.
 * When Firefox is installed, automatically configure its profiles to trust the generated certificates so browser warnings disappear on the next restart.
-* Suppress automatic directory listings by exporting `GHTTPD_DISABLE_DIR_INDEX=1`; the handler returns HTTP 403 for directory roots.
+* Suppress automatic directory listings by exporting `GHTTPD_DISABLE_DIR_INDEX=1`; directory roots still serve `index.html` / `index.htm` when present, otherwise the handler returns HTTP 403.
 * Apply route-scoped response headers (including `Cache-Control`) with repeatable `--response-header /path=Header-Name:Header-Value` mappings.
 * Configure proxy streaming mode per route using `--proxy-streaming /path=unbuffered|buffered` to control proxy flush behavior.
 * Configure every flag via `~/.config/ghttp/config.yaml` or environment variables prefixed with `GHTTP_` (for example, `GHTTP_SERVE_DIRECTORY=/srv/www`).

@@ -522,9 +522,17 @@ func exerciseStandardHTTPServerFlows(testingT *testing.T, repositoryRoot string,
 		false,
 	)
 	disabledClient := &http.Client{Timeout: browseModeRequestTimeout}
-	rootStatusCode, _, _ := executeHTTPGet(testingT, disabledClient, disabledBaseURL, "/")
-	if rootStatusCode != http.StatusForbidden {
-		testingT.Fatalf("expected forbidden listing with no markdown and disabled directory listing, got %d", rootStatusCode)
+	rootStatusCode, _, rootBody := executeHTTPGet(testingT, disabledClient, disabledBaseURL, "/")
+	if rootStatusCode != http.StatusOK || !strings.Contains(rootBody, "ROOT INDEX") {
+		testingT.Fatalf("expected root index serving with no markdown and disabled directory listing, got status=%d body=%s", rootStatusCode, rootBody)
+	}
+	nestedStatusCode, _, nestedBody := executeHTTPGet(testingT, disabledClient, disabledBaseURL, "/example/")
+	if nestedStatusCode != http.StatusOK || !strings.Contains(nestedBody, "NESTED INDEX") {
+		testingT.Fatalf("expected nested index serving with no markdown and disabled directory listing, got status=%d body=%s", nestedStatusCode, nestedBody)
+	}
+	missingIndexStatusCode, _, _ := executeHTTPGet(testingT, disabledClient, disabledBaseURL, "/docs/")
+	if missingIndexStatusCode != http.StatusForbidden {
+		testingT.Fatalf("expected forbidden listing without index file in no-markdown mode, got %d", missingIndexStatusCode)
 	}
 	if stopErr := disabledServer.stop(); stopErr != nil {
 		testingT.Fatalf("stop no-markdown server: %v", stopErr)
