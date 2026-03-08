@@ -28,11 +28,15 @@ func (handler initialFileHandler) ServeHTTP(responseWriter http.ResponseWriter, 
 		handler.next.ServeHTTP(responseWriter, request)
 		return
 	}
+	handler.next.ServeHTTP(responseWriter, rewriteRequestPath(request, handler.initialRequestPath))
+}
+
+func rewriteRequestPath(request *http.Request, requestPath string) *http.Request {
 	clonedRequest := request.Clone(request.Context())
 	urlCopy := *request.URL
-	urlCopy.Path = handler.initialRequestPath
-	urlCopy.RawPath = handler.initialRequestPath
+	urlCopy.Path = requestPath
+	urlCopy.RawPath = requestPath
 	clonedRequest.URL = &urlCopy
-	clonedRequest.RequestURI = handler.initialRequestPath
-	handler.next.ServeHTTP(responseWriter, clonedRequest)
+	clonedRequest.RequestURI = requestPath
+	return clonedRequest
 }

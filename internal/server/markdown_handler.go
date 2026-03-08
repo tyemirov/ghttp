@@ -153,10 +153,15 @@ func (handler markdownHandler) selectMarkdownCandidate(directoryPath string) (st
 }
 
 func (handler markdownHandler) directoryIndexExists(directoryPath string) bool {
+	_, exists := findDirectoryIndexPath(handler.fileSystem, directoryPath)
+	return exists
+}
+
+func findDirectoryIndexPath(fileSystem http.FileSystem, directoryPath string) (string, bool) {
 	for index := range directoryIndexCandidates {
 		candidateName := directoryIndexCandidates[index]
 		candidatePath := pathpkg.Join(directoryPath, candidateName)
-		fileHandle, openErr := handler.fileSystem.Open(candidatePath)
+		fileHandle, openErr := fileSystem.Open(candidatePath)
 		if openErr != nil {
 			continue
 		}
@@ -168,9 +173,9 @@ func (handler markdownHandler) directoryIndexExists(directoryPath string) bool {
 		if candidateInfo.IsDir() {
 			continue
 		}
-		return true
+		return candidatePath, true
 	}
-	return false
+	return "", false
 }
 
 func buildHTMLDocument(title string, body []byte) []byte {
@@ -187,9 +192,13 @@ func isMarkdownFile(fileName string) bool {
 	return strings.EqualFold(filepath.Ext(fileName), ".md")
 }
 
-func newDirectoryGuardHandler(next http.Handler, _ http.FileSystem) http.Handler {
+func newDirectoryGuardHandler(next http.Handler, fileSystem http.FileSystem) http.Handler {
 	return http.HandlerFunc(func(responseWriter http.ResponseWriter, request *http.Request) {
 		if strings.HasSuffix(request.URL.Path, "/") {
+			if _, exists := findDirectoryIndexPath(fileSystem, request.URL.Path); exists {
+				next.ServeHTTP(responseWriter, request)
+				return
+			}
 			http.Error(responseWriter, errorMessageDirectoryListingDisabled, http.StatusForbidden)
 			return
 		}
