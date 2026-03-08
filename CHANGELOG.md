@@ -1,5 +1,25 @@
 # Changelog
 
+## [v0.5.2] - 2026-03-08
+
+### Features ✨
+- Serve `index.html` / `index.htm` files when directory listing is disabled, returning HTTP 403 only if no index file is found.
+
+### Improvements ⚙️
+- Rewrite request paths correctly to serve index files transparently.
+- Refactor markdown handler to detect and serve directory index files.
+- Update integration tests to verify correct behavior when directory listing is disabled but index files exist.
+- Clarify README documentation about disabling directory listing while still serving index files.
+
+### Bug Fixes 🐛
+- _No changes._
+
+### Testing 🧪
+- Add tests for serving index files with directory listing disabled to ensure HTTP 200 responses for directory roots with index files, HTTP 403 otherwise.
+
+### Docs 📚
+- Update README to specify behavior of index file serving when directory listing is disabled.
+
 ## v0.5.1 - 2026-03-01
 
 ### Features ✨
