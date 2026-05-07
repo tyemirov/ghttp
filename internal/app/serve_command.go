@@ -84,6 +84,13 @@ func prepareServeConfiguration(cmd *cobra.Command, args []string, portConfigKey 
 	if !allowTLSFiles {
 		enableDynamicHTTPS = false
 	}
+	serveBinding, bindingErr := newServeBinding(bindAddress, portValue)
+	if bindingErr != nil {
+		return bindingErr
+	}
+	bindAddress = serveBinding.bindAddress
+	portValue = serveBinding.port
+
 	absoluteDirectory, absoluteErr := filepath.Abs(directoryPath)
 	if absoluteErr != nil {
 		return fmt.Errorf("resolve directory path: %w", absoluteErr)

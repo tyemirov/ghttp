@@ -58,7 +58,7 @@ After installation the `ghttp` binary is placed in `$GOBIN` (or `$GOPATH/bin`). 
 | --- | --- | --- |
 | Serve the current working directory on the default HTTP port 8000 | `ghttp` | Mirrors `python -m http.server` with structured logging. |
 | Serve a specific directory on a chosen port | `ghttp --directory /srv/www 9000` | Exposes `/srv/www` at <http://localhost:9000>. |
-| Bind to a specific interface | `ghttp --bind 192.168.1.5 8000` | Restricts listening to the provided IP address. |
+| Bind to a specific interface or address | `ghttp --bind 192.168.1.5 8000` or `ghttp --bind 127.0.0.1:8081` | Restricts listening to the provided IP address. When the bind value includes a port, that port is used for the server. |
 | Serve HTTPS with an existing certificate | `ghttp --tls-cert cert.pem --tls-key key.pem 8443` | Keeps backwards-compatible manual TLS support. |
 | Serve HTTPS with self-signed certificates | `ghttp --https` | Defaults to port 8443, installs the development CA, serves HTTPS, and removes credentials on exit. |
 | Disable Markdown rendering | `ghttp --no-md` | Serves raw Markdown assets without HTML conversion. |
@@ -82,7 +82,7 @@ Flags map to Viper configuration keys. Environment variables use the `GHTTP_` pr
 | --- | --- | --- |
 | `PORT` (positional) | `GHTTP_SERVE_PORT` | Defaults to 8000 for HTTP and 8443 when `--https` is enabled. |
 | `--config` | `GHTTP_CONFIG_FILE` | Overrides the default config lookup (`~/.config/ghttp/config.yaml`). |
-| `--bind` | `GHTTP_SERVE_BIND_ADDRESS` | Empty means all interfaces; logs display `localhost` for empty/`0.0.0.0`/`127.0.0.1`. |
+| `--bind` | `GHTTP_SERVE_BIND_ADDRESS` | Empty means all interfaces; accepts host-only values (`127.0.0.1`), port-qualified values (`:8081`), and host-port values (`127.0.0.1:8081`). Logs display `localhost` for empty/`0.0.0.0`/`127.0.0.1`. |
 | `--directory` | `GHTTP_SERVE_DIRECTORY` | Directory to serve files from. Defaults to the working directory. |
 | `--protocol` | `GHTTP_SERVE_PROTOCOL` | HTTP protocol version (use the full value, for example, `HTTP/1.0` or `HTTP/1.1`). |
 | `--no-md` | `GHTTP_SERVE_NO_MARKDOWN` | Disables Markdown rendering. |
