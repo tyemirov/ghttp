@@ -1,6 +1,23 @@
 # Changelog
 
-## Unreleased
+## v0.5.3
+
+### Features ✨
+- _No changes._
+
+### Improvements ⚙️
+- _No changes._
+
+### Bug Fixes 🐛
+- Allow `--bind :PORT` and `--bind HOST:PORT` to set the server port before listening.
+
+### Testing 🧪
+- Add integration coverage for port-qualified bind addresses and empty bind port rejection.
+
+### Docs 📚
+- Clarify bind flag support for host-only, port-only, and host-port values.
+
+## v0.5.2
 
 ### Bug Fixes
 - Allow `--bind :PORT` and `--bind HOST:PORT` to set the server port before listening.
