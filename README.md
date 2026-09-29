@@ -142,5 +142,5 @@ forwarding the request to the embedded `http.FileServer` instance.
 See [ARCHITECTURE.md](./ARCHITECTURE.md) for the current runtime architecture, handler pipeline ordering, and subsystem boundaries.
 
 ## License
-This project is distributed under the terms of the [MIT License](./LICENSE).
-Copyright (c) 2025 Vadym Tyemirov. Refer to the license file for the complete text, including permissions and limitations.
+License: [PolyForm Noncommercial License 1.0.0](./LICENSE).
+Refer to [NOTICE](./NOTICE), [COMMERCIAL_LICENSE.md](./COMMERCIAL_LICENSE.md), and [CONTRIBUTOR_LICENSE.md](./CONTRIBUTOR_LICENSE.md) for the repository terms.
