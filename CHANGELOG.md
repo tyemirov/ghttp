@@ -1,5 +1,29 @@
 # Changelog
 
+## [v0.5.4] - 2026-09-29
+
+- Merge pull request #46 from tyemirov/gix/migrate-to-mprlab-governance-and-retire-legacy-workflows
+- Fix Pages test header and align stacked license references
+- Merge PR #45 device validation and PR #44 license into PR #46 stack
+- Merge PR #44 license changes into PR #45 stack
+- test: add macOS certificate cleanup and Pages release contract coverage
+- feat(release): add release artifact pipeline for containers and Pages
+- docs: add MPR Lab agent guidelines and policies
+- feat: add https-persist flag to retain dynamic HTTPS CA
+- docs: add release lifecycle and https-persist flag to README
+- docs: update PLAN to vendor release scripts and enforce owned tooling
+- build: overhaul Makefile release pipeline for artifacts and publishing
+- docs: add recurring maintenance runbooks to ISSUES.md
+- docs: update AGENTS.md with forward-only discipline and MPR governance
+- chore: update .gitignore for MPRLAB governance plans
+- ci: remove Docker, Pages and release workflows
+- docs: accept simulator validation and prohibit physical-device gates
+- docs: correct license scope and rights
+- docs: identify licensed repository
+- chore: apply polyform-noncommercial license
+- Merge pull request #43 from tyemirov/bugfix/loopaware-site-id
+- fix(pages): restore LoopAware site identity
+
 ## v0.5.3
 
 ### Features ✨
