@@ -32,9 +32,12 @@ bin/
 .idea/
 .vscode/
 
-PLAN.md
 # Managed by gix gitignore workflow
 .env.*
 .DS_Store
 qodana.yaml
 tools/
+
+# BEGIN MPRLAB-GOVERNANCE
+/.mprlab/*-PLAN.md
+# END MPRLAB-GOVERNANCE
