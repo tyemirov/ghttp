@@ -1,14 +1,22 @@
 # AGENTS.md
 
+## Forward-Only Contract Discipline
+
+This repository follows a forward-only, confident programming paradigm. This is a binding agent contract: no fallbacks, no backward compatibility, no legacy support, and no compatibility shims. Do not spend design or implementation effort on backward compatibility considerations except for explicit one-off data migrations into the current canonical contract.
+
+Repeat for emphasis because this rule is binding: no fallbacks, no backward compatibility, no legacy compatibility. Delete or reject obsolete code paths, stale schemas, deprecated config, and old persisted shapes instead of preserving them through compatibility layers, dual reads/writes, aliases, or best-effort recovery.
+
+One-off data migrations are allowed only when they move existing persisted data into the current schema in a bounded operation. After migration, remove the bridge and keep only the current contract.
+
 ## TAuth
 
 Single-origin authentication service for Goole Identy Service designed for stand-alone front-end apps. See README.md for details
 
 ## Document Roles
 
-- NOTES.md: Read-only process/journal. Append-only when closing work; do not retroactively edit history.
-- ISSUES.md: Append-only log of newly discovered requests and changes. No instructive sections live here; each entry records what changed or what was discovered.
-- PLAN.md: Working plan for one concrete change/issue; ephemeral and replaced per change.
+- `NOTES.md` contains read-only process history. Use `.mprlab/POLICY.md` and `.mprlab/PLANNING.md` for current execution rules.
+- Use root `ISSUES.md` as the active issue tracker. Preserve issue history.
+- Use `.mprlab/PLANNING.md` for temporary execution plans.
 
 ### Issue Status Terms
 
@@ -18,7 +26,7 @@ Single-origin authentication service for Goole Identy Service designed for stand
 
 ### Validation & Confidence Policy
 
-All rules for validation, error handling, invariants, and “confident programming” (no defensive checks, edge-only validation, smart constructors, CI gates) are defined in POLICY.md. Treat that document as binding; this file does not restate them.
+Use `.mprlab/POLICY.md` for validation, error handling, invariants, and confident programming.
 
 ## Front-End Coding Standards (Browser ES Modules with Alpine.js + Vanilla CSS)
 
@@ -93,7 +101,8 @@ All rules for validation, error handling, invariants, and “confident programmi
 - Puppeteer permitted; Playwright forbidden.
 - Node test harness (`npm test`) runs browser automation.
 - Use table-driven test cases.
-- Black-box tests only: public APIs and DOM.
+- Use public API and browser integration tests for product acceptance.
+- Use focused unit tests under `.mprlab/POLICY.md` when useful.
 - `tests/assert.js` provides `assertEqual`, `assertDeepEqual`, `assertThrows`.
 
 ### 8. Documentation
@@ -276,9 +285,9 @@ All rules for validation, error handling, invariants, and “confident programmi
 - Read repo and scan existing code.
 - Plan reuse and extension.
 - Replace branching with data tables where appropriate.
-- Implement minimal, cohesive types.
-- Inject dependencies.
-- Prove with table-driven tests.
+- Obey the integration-first sequence in `.mprlab/POLICY.md` before implementation.
+- Inject dependencies for difficult integration scenarios.
+- Use table-driven scenarios where applicable.
 
 ---
 
@@ -307,7 +316,7 @@ All rules for validation, error handling, invariants, and “confident programmi
 - Inject all external dependencies (files, network, randomness, time). No hidden globals.
 - Treat inputs as immutable; always return new values instead of mutating.
 - Minimal public API surface; expose only one clear solution.
-- For validation, error handling, and invariants, follow **POLICY.md (Confident Programming)**.
+- For validation, error handling, and invariants, follow **.mprlab/POLICY.md (Confident Programming)**.
 
 ---
 
@@ -354,7 +363,8 @@ All rules for validation, error handling, invariants, and “confident programmi
 - Use `pytest` with table-driven tests.
 - Isolate side effects with fixtures.
 - Use `tmp_path` for filesystem operations (no pollution).
-- Black-box: test only public API contracts.
+- Use public API integration tests for product acceptance.
+- Use focused unit tests under `.mprlab/POLICY.md` when useful.
 - CI gate: `pytest -q`, `mypy --strict domain service`.
 
 ---
@@ -368,3 +378,47 @@ All rules for validation, error handling, invariants, and “confident programmi
 - [ ] Clear type hints, no single-letter identifiers.
 - [ ] Config validated at startup.
 - [ ] `pytest`, `mypy --strict` passing.
+
+## Device Validation
+
+- Never require a physical device or physical-device access for any task or gate, under any circumstances.
+- Apply this prohibition to development, tests, validation, acceptance, issue closure, release, publication, and deployment.
+- Never ask the user to provide, obtain, connect, or arrange access to physical devices or physical-device test services.
+- Use simulators, emulators, and automated browsers for device validation.
+- Accept these environments as sufficient for device validation and acceptance.
+- Remove physical-device requirements and blockers from the selected task and its current acceptance records.
+- Never replace a removed physical-device gate with another hardware prerequisite.
+- Report the actual test environment and observed results without claiming physical-device execution.
+
+<!-- BEGIN MPRLAB-GOVERNANCE -->
+## MPR Lab Governance
+
+Root `AGENTS.md` is the agent entrypoint. Shared rules live under `.mprlab/`.
+
+Read `.mprlab/POLICY.md` for every task.
+Read the following files only when their condition applies.
+Read each selected guide in full before its first applicable action.
+
+- Before edits: `.mprlab/PLANNING.md`.
+- For technical prose: `.mprlab/AGENTS.DOCS.md` and `.mprlab/TERMINOLOGY.md`.
+- For issue work: the selected issue and its dependencies in `ISSUES.md`.
+- For tracker edits: `.mprlab/issues-md-format.md`.
+- For Git operations: `.mprlab/AGENTS.GIT.md`.
+- For HTTP or gRPC API changes: `.mprlab/AGENTS.API.md`.
+- For Go changes: `.mprlab/AGENTS.GO.md`.
+- For Python changes: `.mprlab/AGENTS.PY.md`.
+- For browser changes: `.mprlab/AGENTS.FRONTEND.md`.
+- For container changes: `.mprlab/AGENTS.DOCKER.md`.
+
+File permission modes are outside agent scope.
+Never examine, validate, compare, require, change, or record a file permission mode.
+Never use a file permission mode in acceptance, security, credential, execution, publication, deployment, or failure analysis.
+The values `0600` and `7777` have no governance meaning.
+This rule does not change service authorization or operation authority.
+
+Always reference each issue by its ID, for example `B001` or `I027`.
+Never use an `ISSUES.md` file path, line number, or `path:line` syntax as an issue reference.
+
+Do not create `.mprlab/AGENTS.md`. Scoped guidance belongs in `.mprlab/AGENTS.*.md` files.
+If guidance conflicts, obey `.mprlab/POLICY.md` first, then root `AGENTS.md`, then the applicable scoped guide.
+<!-- END MPRLAB-GOVERNANCE -->

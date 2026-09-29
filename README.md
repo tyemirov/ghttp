@@ -40,6 +40,16 @@ docker run -p 8443:8443 -v $(pwd):/data -v ~/.config/ghttp:/root/.config/ghttp g
 
 Download the latest binaries from the [Releases page](https://github.com/tyemirov/ghttp/releases).
 
+Release and deploy through the repository lifecycle:
+
+```bash
+make release
+make publish
+make deploy
+```
+
+`make release` runs CI and prepares the cross-platform binaries, checksums, multi-platform container archives, GitHub Pages archive, changelog commit, and annotated tag entirely from local state under `.git/mprlab-release`. It performs no remote write. `make publish` pushes the exact prepared Git refs, GitHub Release assets, and container images without rebuilding. `make deploy` activates the already-published Pages archive on `gh-pages`; gHTTP has no centrally deployed container runtime.
+
 ### Go toolchain
 
 Install gHTTP with the Go toolchain:
@@ -94,6 +104,7 @@ Flags map to Viper configuration keys. Environment variables use the `GHTTP_` pr
 | `--proxy-path` | `GHTTP_SERVE_PROXY_PATH_PREFIX` | Legacy from-path prefix (for example, `/api`); requires `--proxy-backend`. |
 | `--proxy-backend` | `GHTTP_SERVE_PROXY_BACKEND` | Legacy to-backend URL (for example, `http://backend:8081`); requires `--proxy-path`. |
 | `--https` | `GHTTP_SERVE_HTTPS` | Enables self-signed HTTPS using the development certificate authority (SANs from `--https-host`); mutually exclusive with `--tls-cert` and `--tls-key`. |
+| `--https-persist` | `GHTTP_HTTPS_PERSIST` | Retains the development CA and certificates after shutdown. Requires `--https`. |
 | `--https-host` | `GHTTP_HTTPS_HOSTS` | Repeatable flag; env uses comma-separated list; only used with `--https` and included in generated HTTPS certificates. |
 | `--tls-cert` | `GHTTP_SERVE_TLS_CERTIFICATE` | Provide with `--tls-key`; cannot combine with `--https`. |
 | `--tls-key` | `GHTTP_SERVE_TLS_PRIVATE_KEY` | Provide with `--tls-cert`; cannot combine with `--https`. |
@@ -131,5 +142,5 @@ forwarding the request to the embedded `http.FileServer` instance.
 See [ARCHITECTURE.md](./ARCHITECTURE.md) for the current runtime architecture, handler pipeline ordering, and subsystem boundaries.
 
 ## License
-This project is distributed under the terms of the [MIT License](./LICENSE).
-Copyright (c) 2025 Vadym Tyemirov. Refer to the license file for the complete text, including permissions and limitations.
+License: [PolyForm Noncommercial License 1.0.0](./LICENSE).
+Refer to [NOTICE](./NOTICE), [COMMERCIAL_LICENSE.md](./COMMERCIAL_LICENSE.md), and [CONTRIBUTOR_LICENSE.md](./CONTRIBUTOR_LICENSE.md) for the repository terms.

@@ -40,6 +40,7 @@ type ServeConfiguration struct {
 	TLSPrivateKeyPath       string
 	DisableDirectoryListing bool
 	EnableDynamicHTTPS      bool
+	PersistHTTPS            bool
 	EnableMarkdown          bool
 	BrowseDirectories       bool
 	InitialFileRelativePath string
@@ -168,6 +169,11 @@ func prepareServeConfiguration(cmd *cobra.Command, args []string, portConfigKey 
 		return streamingPolicyErr
 	}
 
+	persistHTTPS := configurationManager.GetBool(configKeyHTTPSPersist)
+	if persistHTTPS && !enableDynamicHTTPS {
+		return errors.New("https-persist requires https")
+	}
+
 	serveConfiguration := ServeConfiguration{
 		BindAddress:             bindAddress,
 		Port:                    portValue,
@@ -177,6 +183,7 @@ func prepareServeConfiguration(cmd *cobra.Command, args []string, portConfigKey 
 		TLSPrivateKeyPath:       tlsKeyPath,
 		DisableDirectoryListing: disableDirectoryListing,
 		EnableDynamicHTTPS:      enableDynamicHTTPS,
+		PersistHTTPS:            persistHTTPS,
 		EnableMarkdown:          !markdownDisabled,
 		BrowseDirectories:       browseDirectories,
 		InitialFileRelativePath: initialFileRelativePath,
@@ -283,7 +290,7 @@ func serveWithDynamicHTTPS(cmd *cobra.Command, resources *applicationResources, 
 	if err := prepareHTTPSContext(cmd); err != nil {
 		return err
 	}
-	setupErr := runHTTPSSetup(cmd)
+	installer, setupErr := runHTTPSSetup(cmd)
 	if setupErr != nil {
 		return setupErr
 	}
@@ -291,7 +298,10 @@ func serveWithDynamicHTTPS(cmd *cobra.Command, resources *applicationResources, 
 	certificateDirectory := cmd.Context().Value(contextKeyHTTPSCertificateDir).(string)
 
 	serveErr := executeHTTPSServe(cmd, resources, serveConfiguration, hosts, certificateDirectory)
-	uninstallErr := runHTTPSUninstall(cmd)
+	if serveConfiguration.PersistHTTPS {
+		return serveErr
+	}
+	uninstallErr := runHTTPSUninstall(cmd, installer)
 	if uninstallErr != nil {
 		if serveErr != nil {
 			return errors.Join(serveErr, uninstallErr)

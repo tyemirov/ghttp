@@ -33,14 +33,14 @@ const (
 	logFieldHosts                        = "hosts"
 )
 
-func runHTTPSSetup(cmd *cobra.Command) error {
+func runHTTPSSetup(cmd *cobra.Command) (truststore.Installer, error) {
 	resources, err := getApplicationResources(cmd)
 	if err != nil {
-		return err
+		return nil, err
 	}
 	certificateDirectory, err := resolveCertificateDirectory(resources.configurationManager)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	fileSystem := certificates.NewOperatingSystemFileSystem()
@@ -48,20 +48,20 @@ func runHTTPSSetup(cmd *cobra.Command) error {
 	manager := certificates.NewCertificateAuthorityManager(fileSystem, certificates.NewSystemClock(), rand.Reader, certificateConfiguration)
 	_, ensureErr := manager.EnsureCertificateAuthority(cmd.Context())
 	if ensureErr != nil {
-		return fmt.Errorf("ensure certificate authority: %w", ensureErr)
+		return nil, fmt.Errorf("ensure certificate authority: %w", ensureErr)
 	}
 
 	installer, installerErr := buildTrustStoreInstaller(fileSystem)
 	if installerErr != nil {
-		return installerErr
+		return nil, installerErr
 	}
 	installErr := installer.Install(cmd.Context(), filepath.Join(certificateDirectory, certificates.DefaultRootCertificateFileName))
 	if installErr != nil {
-		return fmt.Errorf("install certificate authority: %w", installErr)
+		return nil, fmt.Errorf("install certificate authority: %w", installErr)
 	}
 
-	logCertificateMessage(resources, "certificate authority installed", certificateDirectory)
-	return nil
+	logCertificateMessage(resources, "certificate authority ready", certificateDirectory)
+	return installer, nil
 }
 
 func executeHTTPSServe(cmd *cobra.Command, resources *applicationResources, serveConfiguration ServeConfiguration, hosts []string, certificateDirectory string) error {
@@ -125,7 +125,7 @@ func executeHTTPSServe(cmd *cobra.Command, resources *applicationResources, serv
 	return fileServerInstance.Serve(serveContext, fileServerConfiguration)
 }
 
-func runHTTPSUninstall(cmd *cobra.Command) error {
+func runHTTPSUninstall(cmd *cobra.Command, installer truststore.Installer) error {
 	resources, err := getApplicationResources(cmd)
 	if err != nil {
 		return err
@@ -136,10 +136,6 @@ func runHTTPSUninstall(cmd *cobra.Command) error {
 	}
 
 	fileSystem := certificates.NewOperatingSystemFileSystem()
-	installer, installerErr := buildTrustStoreInstaller(fileSystem)
-	if installerErr != nil {
-		return installerErr
-	}
 	uninstallErr := installer.Uninstall(cmd.Context())
 	if uninstallErr != nil {
 		return fmt.Errorf("uninstall certificate authority: %w", uninstallErr)
